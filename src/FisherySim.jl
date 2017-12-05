@@ -1,5 +1,7 @@
 module FisherySim
 
-# package code goes here
+using Distributions
+using StatsBase
+using Distances
 
 end # module
