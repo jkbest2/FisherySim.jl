@@ -33,7 +33,7 @@ end
 """
     Bathymetry
         bathy::Vector{Float64}
-        loca::Array{Float64, 2}
+        locs::Array{Float64, 2}
         griddim::Vector{Float64}
 
 A realization of a `BathymetryModel`. Typically created using the
