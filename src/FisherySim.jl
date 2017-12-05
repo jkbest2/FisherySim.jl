@@ -4,6 +4,8 @@ using Distributions
 using StatsBase
 using Distances
 
+import Base: rand, +, -
+
 include("bathymetry.jl")
 export BathymetryModel, Bathymetry, rand
 
@@ -12,4 +14,8 @@ export MovementModel, eqdist
 
 include("pop_dynamics.jl")
 export PopState, Schaefer, step
+
+include("vessels.jl")
+export Vessel, SurveyVessel, FisheryVessel, target, Catch, CPUE, +, -
+
 end # module
