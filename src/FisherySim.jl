@@ -9,4 +9,7 @@ export BathymetryModel, Bathymetry, rand
 
 include("movement.jl")
 export MovementModel, eqdist
+
+include("pop_dynamics.jl")
+export PopState, Schaefer, step
 end # module
