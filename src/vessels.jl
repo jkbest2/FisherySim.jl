@@ -21,7 +21,7 @@ struct Catch <: Any
     E::Vector{Float64}
     F::Vector{Float64}
 end
-function Catch(V::Vessel, P::Popstate, σ::Float64)
+function Catch(V::Vessel, P::PopState, σ::Float64)
     effort = target(V, P)
     ctch = zeros(Float64, effort)
     for (loc, eff) in enumerate(effort)
