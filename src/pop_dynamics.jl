@@ -1,3 +1,5 @@
+abstract type PopulationDynamicsModel end
+
 """
     PopState
         P::Vector{Float64}
@@ -8,6 +10,8 @@ struct PopState <: Any
     P::Vector{Float64}
 end
 
+sum(P::PopState) = sum(P.P)
+
 """
     Schaefer
         r::Float64
@@ -15,7 +19,7 @@ end
 
 Parameters of a Schaefer population dynamics model.
 """
-struct Schaefer
+struct Schaefer <: PopulationDynamicsModel
     r::Float64
     K::Float64
 end
@@ -33,4 +37,22 @@ function step(S::Schaefer, P::PopState)
     PopState(Pnew)
 end
 
-sum(P::PopState) = sum(P.P)
+"""
+    SchaeferStoch
+        r::Float64
+        K::Float64
+        D::Distribution
+
+Schaefer model with multiplicative process variation as
+described by D.
+"""
+struct SchaeferStoch <: PopulationDynamicsModel
+    r::Float64
+    K::Float64
+    D::Distribution
+end
+
+function step(S::SchaeferStoch, P::PopState)
+    Pnew = step(Schaefer(S.r, S.K), P)
+    PopState(rand(S.D, length(Pnew.P)) .* Pnew.P)
+end

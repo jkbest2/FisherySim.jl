@@ -10,7 +10,7 @@ include("bathymetry.jl")
 export BathymetryModel, Bathymetry, rand
 
 include("pop_dynamics.jl")
-export PopState, Schaefer, step, sum
+export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch
 
 include("movement.jl")
 export MovementModel, eqdist
