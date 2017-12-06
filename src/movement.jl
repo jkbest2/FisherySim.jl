@@ -27,7 +27,7 @@ function MovementModel(B::Bathymetry,
 end
 
 """
-eqdist(M::MovementModel)
+    eqdist(M::MovementModel)
 
 Find the equilibrium distribution under a given movement model.
 """
@@ -37,7 +37,7 @@ function eqdist(M::MovementModel)
     PopState(eq)
 end
 
-(M::MovementModel)(P::PopState) = PopState(M.M * P.P)
+(M::MovementModel)(P::PopState) = PopState(M.M' * P.P)
 
 function eqdist(M::MovementModel, B0::Real)
     eq = eqdist(M)
