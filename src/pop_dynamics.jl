@@ -32,3 +32,6 @@ function step(S::Schaefer, P::PopState)
     Pnew = Ptot + S.r * (1 - Ptot / S.K)
     PopState(Pnew * P.P ./ Ptot)
 end
+
+sum(P::PopState) = sum(P.P)
+
