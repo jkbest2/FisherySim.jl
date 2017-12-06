@@ -16,6 +16,6 @@ include("movement.jl")
 export MovementModel, eqdist
 
 include("vessels.jl")
-export Vessel, SurveyVessel, FisheryVessel, target, Catch, CPUE, +, -
+export Vessel, SurveyVessel, FisheryVessel, target, Catch, CPUE, +, -, fish
 
 end # module
