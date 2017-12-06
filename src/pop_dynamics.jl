@@ -21,17 +21,16 @@ struct Schaefer
 end
 
 """
-    step
+    step(S::Schaefer, p::PopState)
 
-Step a population dynamics model forward by one time increment. Here
-assumes region-level dynamics and carrying capacity. New individuals
-are allocated to locations based on original population.
+Step a population dynamics model forward by one time increment.
+Population change is based on a region-wide carrying capacity,
+but each cell steps forward individually.
 """
 function step(S::Schaefer, P::PopState)
-    Ptot = sum(P.P)
-    Pnew = Ptot + S.r * (1 - Ptot / S.K)
-    PopState(Pnew * P.P ./ Ptot)
+    Ptot = sum(P)
+    Pnew = P.P .+  S.r .* P.P * (1 - Ptot / S.K)
+    PopState(Pnew)
 end
 
 sum(P::PopState) = sum(P.P)
-
