@@ -34,12 +34,12 @@ Find the equilibrium distribution under a given movement model.
 function eqdist(M::MovementModel)
     eq = real(eigvecs(M.M')[:, 1])
     eq ./= sum(eq)
-    eq
+    PopState(eq)
 end
 
 (M::MovementModel)(P::PopState) = PopState(P.P * M.M)
 
 function eqdist(M::MovementModel, B0::Real)
     eq = eqdist(M)
-    B0 .* eq
+    PopState(B0 .* eq.P)
 end
