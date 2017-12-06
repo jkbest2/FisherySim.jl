@@ -16,12 +16,12 @@ function MovementModel(B::Bathymetry, distance::Distributions.UnivariateDistribu
 end
 
 function MovementModel(B::Bathymetry,
-    distance::Distributions.UnivariateDistribution,
-    depth::Distributions.UnivariateDistribution)
+                       distance::Distributions.UnivariateDistribution,
+                       depth::Distributions.UnivariateDistribution)
     distmat = pairwise(Euclidean(), B.locs')
     distmvt = pdf.(distance, distmat)
-    dpthmvt = pdf.(depth, distmat)
-    mvt = distmvt .* dpthmvt
+    dpthmvt = pdf.(depth, B.bathy)
+    mvt = distmvt .* dpthmvt'
     mvt ./= sum(mvt, 2)
     MovementModel(mvt)
 end
