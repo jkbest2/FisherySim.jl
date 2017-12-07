@@ -40,6 +40,7 @@ Holds catch and effort data from a given fleet's fishing effort. Does
 not account for within-season depletion.
 """
 struct Catch <: Any
+    locs::Vector{Float64}
     E::Vector{Float64}
     F::Vector{Float64}
 end
@@ -54,7 +55,7 @@ end
 
 # FIXME: add a Fleet type to deal with this better?
 """
-    fish(P::PopState, VV::Vector{Vessel}, σ::Float64)
+    fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
 
 Fish the current population with the fleet in `VV`. Catches
 are removed from the current population in random order over
@@ -94,7 +95,9 @@ function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
 
     Crec = Vector{Catch}(2)
     for v in 1:nv
-        Crec[v] = Catch(eff[v], ctch[v])
+        fished = eff[v] .> 0
+        locvec = collect(1:length(eff[v]))[fished]
+        Crec[v] = Catch(locvec, eff[v][fished], ctch[v][fished])
     end
     Pnext, Crec
 end
@@ -104,9 +107,9 @@ struct CPUE
 end
 CPUE(C::Catch) = C.F ./ C.E
 
-function +(C1::Catch, C2::Catch)
-    Catch(C1.E .+ C2.E, C1.F .+ C2.F)
-end
+# function +(C1::Catch, C2::Catch)
+#     Catch(C1.E .+ C2.E, C1.F .+ C2.F)
+# end
 
 function -(P::PopState, C::Catch)
     PopState(P.P .- C.F)
