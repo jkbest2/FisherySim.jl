@@ -40,7 +40,7 @@ Holds catch and effort data from a given fleet's fishing effort. Does
 not account for within-season depletion.
 """
 struct Catch <: Any
-    locs::Vector{Float64}
+    locs::Vector{Int}
     E::Vector{Float64}
     F::Vector{Float64}
 end
@@ -103,9 +103,10 @@ function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
 end
 
 struct CPUE
+    locs::Vector{Int}
     cpue::Vector{Float64}
 end
-CPUE(C::Catch) = C.F ./ C.E
+CPUE(C::Catch) = CPUE(C.locs, C.F ./ C.E)
 
 # function +(C1::Catch, C2::Catch)
 #     Catch(C1.E .+ C2.E, C1.F .+ C2.F)
