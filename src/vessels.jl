@@ -87,9 +87,18 @@ function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
     for trip in fish_order
         loc = eff_vec[trip]
         v = vvec[trip]
-        c = rand(LogNormal(log(P.P[loc] * Fleet[v].q), σ))
-        Pnext.P[loc] -= c
-        ctch[v][loc] += c
+        if Pnext.P[loc] > 0
+            c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q), σ))
+        else
+            c = 0.0
+        end
+        if Pnext.P[loc] > c
+            Pnext.P[loc] -= c
+            ctch[v][loc] += c
+        else
+            ctch[v][loc] = Pnext.P[loc]
+            Pnext.P[loc] = 0.0
+        end
         eff[v][loc] += 1
     end
 
