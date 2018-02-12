@@ -44,25 +44,34 @@ struct Catch <: Any
     E::Vector{Float64}
     F::Vector{Float64}
 end
-function Catch(V::Vessel, P::PopState, σ::Float64)
+#function Catch(V::Vessel, P::PopState, σ::Float64)
+#    effort = target(V, P)
+#    ctch = zeros(Float64, effort)
+#    for (loc, eff) in enumerate(effort)
+#        ctch[loc] = rand(LogNormal(log(P.P[loc] * V.q * effort), σ))
+#    end
+#    Catch(effort, ctch)
+#end
+
+function Catch(V::Vessel, P::PopState, ξ::Float64, ϕ::Float64)
     effort = target(V, P)
     ctch = zeros(Float64, effort)
-    for (loc, eff) in enumerate(effort)
-        ctch[loc] = rand(LogNormal(log(P.P[loc] * V.q * effort), σ))
+    for (idx, eff) in enumerate(effort)
+        ctch[idx] = rand(Tweedie(P.P[idx] * V.q * eff, ξ, ϕ))
     end
     Catch(effort, ctch)
 end
 
 # FIXME: add a Fleet type to deal with this better?
 """
-    fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
+    fish(P::PopState, Fleet::Vector{Vessel}, ξ::Float64, ϕ::Float64)
 
 Fish the current population with the fleet in `VV`. Catches
 are removed from the current population in random order over
 the course of a season. Currently assumes constant effort at
 each location that is fished (i.e. effort is 1 exactly).
 """
-function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
+function fish(P::PopState, Fleet::Vector{Vessel}, ξ::Float64, ϕ::Float64)
     nv = length(Fleet)
     nloc = length(P.P)
 
@@ -88,7 +97,8 @@ function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64)
         loc = eff_vec[trip]
         v = vvec[trip]
         if Pnext.P[loc] > 0
-            c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q), σ))
+            # c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q), σ))
+            c = rand(Tweedie(P.P[loc] * Fleet[v].q, ξ, ϕ))
         else
             c = 0.0
         end
