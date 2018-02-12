@@ -1,6 +1,7 @@
 module FisherySim
 
 using Distributions
+using Rtweedie
 using StatsBase
 using Distances
 
@@ -10,7 +11,7 @@ include("bathymetry.jl")
 export BathymetryModel, Bathymetry, rand
 
 include("pop_dynamics.jl")
-export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch
+export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch, SchaeferKStoch
 
 include("movement.jl")
 export MovementModel, eqdist

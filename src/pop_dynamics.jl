@@ -56,3 +56,20 @@ function step(S::SchaeferStoch, P::PopState)
     Pnew = step(Schaefer(S.r, S.K), P)
     PopState(rand(S.D, length(Pnew.P)) .* Pnew.P)
 end
+
+"""
+    SchaeferKStoch
+        r::Float64
+        Kdist::Distibution
+
+Schaefer model with random deviations of K
+"""
+struct SchaeferKStoch <: PopulationDynamicsModel
+    r::Float64
+    Kdist::Distribution
+end
+
+function step(S::SchaeferKStoch, P::PopState)
+    K = rand(S.Kdist)
+    step(Schaefer(S.r, K), P)
+end
