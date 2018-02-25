@@ -62,16 +62,20 @@ function Catch(V::Vessel, P::PopState, ξ::Float64, ϕ::Float64)
     Catch(effort, ctch)
 end
 
+function logistic(lpop; k = 2e5, lpop0 = 1e-5)
+    1 / (1 + exp(-k * (lpop - lpop0)))
+end
+
 # FIXME: add a Fleet type to deal with this better?
 """
-    fish(P::PopState, Fleet::Vector{Vessel}, ξ::Float64, ϕ::Float64)
+    fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64, p0::F) where F<:Function
 
 Fish the current population with the fleet in `VV`. Catches
 are removed from the current population in random order over
 the course of a season. Currently assumes constant effort at
 each location that is fished (i.e. effort is 1 exactly).
 """
-function fish(P::PopState, Fleet::Vector{Vessel}, ξ::Float64, ϕ::Float64)
+function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64, Ppos::F) where F<:Function
     nv = length(Fleet)
     nloc = length(P.P)
 
@@ -96,9 +100,9 @@ function fish(P::PopState, Fleet::Vector{Vessel}, ξ::Float64, ϕ::Float64)
     for trip in fish_order
         loc = eff_vec[trip]
         v = vvec[trip]
-        if Pnext.P[loc] > 0
-            # c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q), σ))
-            c = rand(Tweedie(P.P[loc] * Fleet[v].q, ξ, ϕ))
+        c = 0.0
+        if Pnext.P[loc] > 0 && (rand() < Ppos(Pnext.P[loc] .* Fleet[v].q))
+            c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q) - σ^2 / 2, σ))
         else
             c = 0.0
         end

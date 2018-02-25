@@ -3,7 +3,8 @@
              M::MovementModel,
              S::Schaefer,
              Fleet::Vector{Vessels},
-             T::Int, ξ::Float64, ϕ::Float64)
+             T::Int, σ::Float64,
+             Ppos::F) where F<:Function
 
 Simulate the population from P0 forward `T` years, by:
 
@@ -16,13 +17,14 @@ function simulate(P0::PopState,
                   M::MovementModel,
                   S::PopulationDynamicsModel,
                   Fleet::Vector{Vessel},
-                  T::Int, ξ::Float64, ϕ::Float64)
+                  T::Int, σ::Float64,
+                  Ppos::F) where F<:Function
     Pvec = Vector{PopState}(T + 1)
     Pvec[1] = P0
     Crecord = Vector{Vector{Catch}}(T)
 
     for yr in 2:(T + 1)
-        Pf, Crecord[yr - 1] = fish(Pvec[yr - 1], Fleet, ξ, ϕ)
+        Pf, Crecord[yr - 1] = fish(Pvec[yr - 1], Fleet, σ, Ppos)
         Pm = M(Pf)
         Pvec[yr] = step(S, Pm)
     end
