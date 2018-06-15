@@ -4,6 +4,7 @@ using Distributions
 using Rtweedie
 using StatsBase
 using Distances
+using IterativeSolvers
 
 import Base: rand, +, -, step, sum
 
@@ -14,7 +15,7 @@ include("pop_dynamics.jl")
 export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch, SchaeferKStoch
 
 include("movement.jl")
-export MovementModel, eqdist
+export MovementModel, eqdist, approx_eqdist
 
 include("vessels.jl")
 export Vessel, SurveyVessel, FisheryVessel, target, Catch, CPUE, +, -, fish
