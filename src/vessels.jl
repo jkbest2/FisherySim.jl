@@ -1,4 +1,78 @@
-abstract type Vessel <: Any end
+abstract type AbstractTargetingBehavior <: Any end
+
+"Vessels target fishing behavior at random withing the fishery domain."
+struct RandomTargeting <: AbstractTargetingBehavior end
+
+"""
+Vessels target according to some function or vector of preferences.
+
+Accepts either a matrix of preference weights (don't necessarily need to add 
+to one) the same dimensions as the DiscreteFisheryDomain, or a function that
+accepts a single argument (typically a Tuple or Array with two elements) of a
+location and returns a preference weight.
+"""
+struct PreferentialTargeting{T}
+    preference::T
+end
+function PreferentialTargeting(pref::A, Ω::DiscreteFisheryDomain) where A <: AbstractArray
+    all(size(A) .== size(Ω)) ||
+        throw(DimensionMismatch("Preference array and domain dimensions must match."))
+    PreferentialTargeting(pref)
+end
+function PreferentialTargeting(f::Function, Ω::DiscreteFisheryDomain)
+    ## Quick @btime showed comprehension ~1/2 the time as `map`
+    pref = [f(loc) for loc in Ω.locs]
+    PreferentialTargeting(pref)
+end
+
+function target(Ω::DiscreteFisheryDomain, t::RandomTargeting, E::Integer = 1)
+    sample(Ω, E; replace = true)
+end
+
+function target(Ω::DiscreteFisheryDomain,
+                t::PreferentialTargeting{T},
+                E::Integer = 1) where T <: AbstractArray
+    sample(Ω, Weights(t.preference), E; replace = true)
+end
+
+"""
+Catchability describes a catchability surface for a vessel. Accepts either an
+Array with the same dimensions as the DiscreteFisheryDomain or a function that
+accepts a single argument (e.g. 2-element tuple or vector) of coordinates and
+returns the catchability coefficient for that location. Note that at present
+the function form is only used to form the array version under a particular
+DiscreteFisheryDomain.
+"""
+struct Catchability{Tq}
+    catchability::Tq
+end
+## If q is constant over the domain, just pass the value. Don't need to pass the
+## DiscreteFisheryDomain, but it's allowed to keep the interface consistent.
+Catchability(q::Real) = Catchability(q)
+Catchability(q::Real, Ω::DiscreteFisheryDomain) = Catchability(q)
+function Catchability(q::A, Ω::DiscreteFisheryDomain) where A <: AbstractArray
+    all(size(q) .== size(Ω)) ||
+        throw(DimensionMismatch("Catchability array and domain dimensions must match."))
+    Catchability(q)
+end
+function Catchability(f::F, Ω::DiscreteFisheryDomain) where F <: Function
+    q = [f(loc) for loc in Ω.locs]
+    Catchability(q, Ω)
+end
+
+
+function getindex(Q::Catchability{Tq}, i, j) where Tq <: Real
+    Q.catchability
+end
+function getindex(Q::Catchability{Tq}, i, j) where Tq <: AbstractArray
+    Q.catchability[i, j]
+end
+
+struct Vessel{Tt <: AbstractTargetingBehavior,
+              Tq <: Catchability}
+    target::Tt
+    catchability::Tq
+end
 
 """
     SurveyVessel
@@ -79,8 +153,7 @@ function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64, Ppos::F) where F<
     nv = length(Fleet)
     nloc = length(P.P)
 
-    # Figure out which cells will be fished this season for each
-    # vessel
+    # Figure out which cells will be fished this season for each vessel
     effort = target.(Fleet, P)
 
     ctch = Vector{Vector{Float64}}(nv)

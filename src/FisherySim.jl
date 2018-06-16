@@ -18,7 +18,17 @@ include("movement.jl")
 export MovementModel, eqdist, approx_eqdist
 
 include("vessels.jl")
-export Vessel, SurveyVessel, FisheryVessel, target, Catch, CPUE, +, -, fish
+export AbstractTargetingBehavio,
+       RandomTargeting,
+       PreferentialTargeting,
+       target,
+       Catchability,
+       Vessel,
+       Catch,
+       logistic,
+       CPUE,
+       +, -,
+       fish
 
 include("simulation.jl")
 export simulate
