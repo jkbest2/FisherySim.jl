@@ -41,6 +41,7 @@ function GriddedFisheryDomain(origin::Tuple{T, T},
     GriddedFisheryDomain(origin, antipode, (n, n))
 end
 size(Ω::GriddedFisheryDomain) = Ω.n
+length(Ω::GriddedFisheryDomain) = prod(Ω.n)
 
 function sample(rng, Ω::GriddedFisheryDomain, E::Integer)
     N = prod(Ω.n)
