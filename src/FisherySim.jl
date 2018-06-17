@@ -6,7 +6,8 @@ using StatsBase
 using Distances
 using IterativeSolvers
 
-import Base: rand, +, -, step, sum, getindex
+import Base: rand, +, -, step, sum, getindex, size
+import StatsBase: sample
 
 include("bathymetry.jl")
 export BathymetryModel, Bathymetry, rand
@@ -14,7 +15,9 @@ export BathymetryModel, Bathymetry, rand
 include("fisherydomain.jl")
 export AbstractFisheryDomain,
        DiscreteFisheryDomain,
-       GriddedFisheryDomain
+       GriddedFisheryDomain,
+       size,
+       sample
        ## Don't export:
        ## calculate_distances,
        ## map_symm

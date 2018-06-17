@@ -1,34 +1,46 @@
 using FisherySim
 using Distances
 using Distributions
+using StatsBase
 using Base.Test
 
 srand(1234)
 
-## manually create grid
-grid_x = range(5.0, 10.0, 10)
-grid_y = range(2.5, 5.0, 20)
-locs = Base.product(grid_x, grid_y)
-locmat = reduce(vcat, vec([[x y] for (x, y) in locs]))
-distmat = Distances.pairwise(Euclidean(), locmat')
+@testset "Fishery Domain" begin
+    ## manually create grid
+    grid_x = range(5.0, 10.0, 10)
+    grid_y = range(2.5, 5.0, 20)
+    locs = Base.product(grid_x, grid_y)
+    locmat = reduce(vcat, vec([[x y] for (x, y) in locs]))
+    distmat = Distances.pairwise(Euclidean(), locmat')
 
-## Check distance calculation
-loctuples = [(0.0, 0.0) (5.0, 12.0); (3.0, 4.0) (0.0, 3.0)]
-@test all(FisherySim.calculate_distances(loctuples)[:, 1] .== [0.0, 5.0, 13.0, 3.0])
+    ## Check distance calculation
+    loctuples = [(0.0, 0.0) (5.0, 12.0); (3.0, 4.0) (0.0, 3.0)]
+    @test all(FisherySim.calculate_distances(loctuples)[:, 1] .== [0.0, 5.0, 13.0, 3.0])
 
-## Use constructor
-origin = (0.0, 0.0)
-antipode = (100.0, 100.0)
-## Rectangular grid should catch more subtle bugs that symmetry would otherwise
-## let us get away with
-n = (10, 20)
-Ω = GriddedFisheryDomain(origin, antipode, n)
+    ## Use constructor
+    origin = (0.0, 0.0)
+    antipode = (100.0, 100.0)
+    ## Rectangular grid should catch more subtle bugs that symmetry would otherwise
+    ## let us get away with
+    n = (10, 20)
+    Ω = GriddedFisheryDomain(origin, antipode, n)
 
-## Check that computed grid locations are the same
-@test all(vec(getindex.(Ω.locs, 1)) .== locmat[:, 1])
-@test all(vec(getindex.(Ω.locs, 2)) .== locmat[:, 2])
-## Check that distances between grid locations are the same
-@test isapprox(Ω.distances, distmat)
+    ## Check that computed grid locations are the same
+    @test all(size(Ω) .== size(locs))
+    @test all(vec(getindex.(Ω.locs, 1)) .== locmat[:, 1])
+    @test all(vec(getindex.(Ω.locs, 2)) .== locmat[:, 2])
+    ## Check that distances between grid locations are the same
+    @test isapprox(Ω.distances, distmat)
+
+    randsamp = sample(Ω, 400)
+    randhist = fit(Histogram, randsamp, closed = :right)
+    ## FIXME: Need a test for the unweighted sampling case
+    prefsamp = sample(Ω, Weights(1:200), 400)
+    prefhist = fit(Histogram, prefsamp, closed = :right)
+    ## FIXME: Is this the best test to use here?
+    @test prefhist.weights[1] < prefhist.weights[end]
+end
 
 σ² = 3.0
 ρ = 80.0

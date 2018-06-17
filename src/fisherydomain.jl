@@ -40,6 +40,25 @@ function GriddedFisheryDomain(origin::Tuple{T, T},
                               n::Tn) where {T <: Real, Tn <: Integer}
     GriddedFisheryDomain(origin, antipode, (n, n))
 end
+size(Ω::GriddedFisheryDomain) = Ω.n
+
+function sample(rng, Ω::GriddedFisheryDomain, E::Integer)
+    N = prod(Ω.n)
+    sample(rng, 1:N, E, replace = true)
+end
+function sample(Ω::GriddedFisheryDomain, E::Integer)
+    sample(Base.Random.GLOBAL_RNG, Ω, E)
+end
+function sample(rng::AbstractRNG,
+                Ω::GriddedFisheryDomain,
+                w::StatsBase.AbstractWeights,
+                E::Integer)
+    N = prod(Ω.n)
+    sample(rng, 1:N, w, E, replace = true)
+end
+function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer)
+    sample(Base.Random.GLOBAL_RNG, Ω, w, E)
+end
 
 """
     calculate_distances(locs::Array{Tuple{T, T}, 2})
