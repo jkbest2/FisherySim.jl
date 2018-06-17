@@ -6,10 +6,18 @@ using StatsBase
 using Distances
 using IterativeSolvers
 
-import Base: rand, +, -, step, sum
+import Base: rand, +, -, step, sum, getindex
 
 include("bathymetry.jl")
 export BathymetryModel, Bathymetry, rand
+
+include("fisherydomain.jl")
+export AbstractFisheryDomain,
+       DiscreteFisheryDomain,
+       GriddedFisheryDomain
+       ## Don't export:
+       ## calculate_distances,
+       ## map_symm
 
 include("pop_dynamics.jl")
 export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch, SchaeferKStoch
@@ -18,7 +26,7 @@ include("movement.jl")
 export MovementModel, eqdist, approx_eqdist
 
 include("vessels.jl")
-export AbstractTargetingBehavio,
+export AbstractTargetingBehavior,
        RandomTargeting,
        PreferentialTargeting,
        target,
@@ -28,7 +36,8 @@ export AbstractTargetingBehavio,
        logistic,
        CPUE,
        +, -,
-       fish
+       fish,
+       getindex
 
 include("simulation.jl")
 export simulate
