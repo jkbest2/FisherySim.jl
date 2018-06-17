@@ -54,7 +54,7 @@ function sample(rng::AbstractRNG,
                 Ω::GriddedFisheryDomain,
                 w::StatsBase.AbstractWeights,
                 E::Integer)
-    N = prod(Ω.n)
+    N = length(Ω)
     sample(rng, 1:N, w, E, replace = true)
 end
 function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer)

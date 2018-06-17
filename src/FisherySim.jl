@@ -6,21 +6,22 @@ using StatsBase
 using Distances
 using IterativeSolvers
 
-import Base: rand, +, -, step, sum, getindex, size
+import Base: rand, +, -, step, sum, getindex, size, length
 import StatsBase: sample
-
-include("bathymetry.jl")
-export BathymetryModel, Bathymetry, rand
 
 include("fisherydomain.jl")
 export AbstractFisheryDomain,
        DiscreteFisheryDomain,
        GriddedFisheryDomain,
        size,
+       length,
        sample
        ## Don't export:
        ## calculate_distances,
        ## map_symm
+
+include("bathymetry.jl")
+export BathymetryModel, Bathymetry, rand
 
 include("pop_dynamics.jl")
 export PopulationDynamicsModel, PopState, Schaefer, step, sum, SchaeferStoch, SchaeferKStoch
