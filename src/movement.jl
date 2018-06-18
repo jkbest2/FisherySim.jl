@@ -1,29 +1,27 @@
 """
-    MovementModel
-        M::Matrix{Float64}
+    MovementModel{T<:Real}
+        M::Matrix
 
 Model for movement preferences.
 """
-struct MovementModel
-    M::Matrix{Float64}
+struct MovementModel{T<:Real}
+    M::Matrix{T}
 end
 
 function MovementModel(B::Bathymetry, distance::Distributions.UnivariateDistribution)
-    distmat = pairwise(Euclidean(), B.locmat')
-    mvt = pdf.(dist, distmat)
+    mvt = pdf.(dist, B.Ω.distances)
     mvt ./= sum(mvt, 2)
-    MovementModel(mvt)
+    MovementModel(mvt')
 end
 
 function MovementModel(B::Bathymetry,
                        distance::Distributions.UnivariateDistribution,
                        depth::Distributions.UnivariateDistribution)
-    distmat = pairwise(Euclidean(), B.locs')
-    distmvt = pdf.(distance, distmat)
-    dpthmvt = pdf.(depth, B.bathy)
+    distmvt = pdf.(distance, B.Ω.distances)
+    dpthmvt = pdf.(depth, vec(B.bathymetry))
     mvt = distmvt .* dpthmvt'
     mvt ./= sum(mvt, 2)
-    MovementModel(mvt)
+    MovementModel(mvt')
 end
 
 """
@@ -32,12 +30,12 @@ end
 Find the equilibrium distribution under a given movement model.
 """
 function eqdist(M::MovementModel)
-    eq = real(eigvecs(M.M')[:, 1])
+    eq = real(eigvecs(M.M)[:, 1])
     eq ./= sum(eq)
     PopState(eq)
 end
 
-(M::MovementModel)(P::PopState) = PopState(M.M' * P.P)
+(M::MovementModel)(P::PopState) = PopState(M.M * P.P)
 
 """
     eqdist(M::MovementModel, B0::Real)
@@ -59,9 +57,9 @@ Uses power iteration to find the spatial population distribution given
 some movement operator `M` and total biomass `B0`. **Much** faster than
 `eqdist` given reasonably large operators.
 """
-function approx_eqdist(M::MovementModel, B0::Real)
-    A = M.M'
-    ## Tolerance taken from IterativeSolvers.jl
+function approx_eqdist(M::MovementModel{T}, B0::T) where T<:Real
+    A = M.M
+    ## Tolerance taken from IterativeSolvers.jl, may need to be reduced.
     tol = eps(real(eltype(A))) * size(A, 2) ^ 3
     d = size(A, 1)
     v0 = ones(d) / norm(ones(d))

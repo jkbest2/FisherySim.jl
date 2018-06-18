@@ -74,7 +74,13 @@ end
 
 move = MovementModel(bathy_exp, Exponential(10.0), Normal(10.0, 2.0))
 
+eqdist_ex = eqdist(move, 100.0)
+eqdist_ap = approx_eqdist(move, 100.0)
+
 @testset "Movement models" begin
+    ## Broke when going from 10×10 grid to 10×20, so upped the `rtol`.
+    @test eqdist_ex.P ≈ eqdist_ap.P rtol = 1e-6
+end
 
     # eqdist_ex = eqdist(move, 100.0)
     # eqdist_ap = approx_eqdist(move, 100.0)
