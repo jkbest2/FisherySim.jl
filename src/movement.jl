@@ -52,6 +52,10 @@ function eqdist(M::MovementModel, B0::Real)
     PopState(B0 .* eq.P)
 end
 
+## TODO: Should stopping criterion rely on Rayleigh quotient giving an
+## eigenvalue of one, rather than estimated eigenvector convergence?
+## Also consider using ARPACK.jl (new, with FORTRAN deps) or 
+## IterativeSolvers.jl
 """
     approx_eqdist(M::MovementModel, B0::Real)
 
