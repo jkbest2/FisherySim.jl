@@ -3,8 +3,6 @@ module FisherySim
 using Distributions
 using Rtweedie
 using StatsBase
-using Distances
-using IterativeSolvers
 
 import Base: rand, +, -, step, sum, getindex, size, length
 import StatsBase: sample
