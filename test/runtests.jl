@@ -74,17 +74,33 @@ end
 
 move = MovementModel(bathy_exp, Exponential(10.0), Normal(10.0, 2.0))
 
+eqdist_ex0 = eqdist(move)
+eqdist_ap0 = approx_eqdist(move)
 eqdist_ex = eqdist(move, 100.0)
 eqdist_ap = approx_eqdist(move, 100.0)
 
 @testset "Movement models" begin
+    @test all(0 .≤ vecstate(eqdist_ex0) .≤ 1)
+    @test all(0 .≤ vecstate(eqdist_ap0) .≤ 1)
+    @test sum(eqdist_ex0) ≈ 1.0
+    @test sum(eqdist_ap0) ≈ 1.0
+    @test sum(eqdist_ex) ≈ 100.0
+    @test sum(eqdist_ap) ≈ 100.0
     ## Broke when going from 10×10 grid to 10×20, so upped the `rtol`.
-    @test eqdist_ex.P ≈ eqdist_ap.P rtol = 1e-6
+    @test vecstate(eqdist_ex0) ≈ vecstate(eqdist_ap0) rtol = 1e-6
+    @test vecstate(eqdist_ex) ≈ vecstate(eqdist_ap) rtol = 1e-6
 end
 
-    # eqdist_ex = eqdist(move, 100.0)
-    # eqdist_ap = approx_eqdist(move, 100.0)
+r = 0.05
+K = 100.0
+schaef = Schaefer(r, K)
+P1 = step(schaef, eqdist_ap)
+Phalf = PopState(P1.P ./ 2)
+Phalf1 = step(schaef, Phalf)
 
-    ## Broke when going from 10×10 grid to 10×20, so upped the `rtol`.
-    # @test eqdist_ex.P ≈ eqdist_ap.P rtol = 1e-6
+@testset "Population dynamics" begin
+    @test sum(P1) ≈ K
+    @test all(vecstate(P1) .== vecstate(eqdist_ap))
+    @test all(vecstate(Phalf1) .> vecstate(Phalf))
+    @test sum(Phalf1) ≈ 51.25
 end

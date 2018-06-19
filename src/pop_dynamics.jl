@@ -1,29 +1,32 @@
 abstract type PopulationDynamicsModel end
 
 """
-    PopState
-        P::Vector{Float64}
+    PopState{T<:Real}
+        P::Matrix{T}
 
 Hold the population state at a given time.
 """
-struct PopState <: Any
-    P::Vector{Float64}
+struct PopState{T<:Real} <: Any
+    P::Matrix{T}
 end
 
+vecstate(P::PopState) = vec(P.P)
 sum(P::PopState) = sum(P.P)
 
 """
-    Schaefer
-        r::Float64
-        K::Float64
+    Schaefer{T<:Real}
+        r::T
+        K::T
 
 Parameters of a Schaefer population dynamics model.
 """
-struct Schaefer <: PopulationDynamicsModel
-    r::Float64
-    K::Float64
+struct Schaefer{T<:Real} <: PopulationDynamicsModel
+    r::T
+    K::T
 end
 
+## FIXME: This is a bad pun on `step`, which is used to get the step size of a
+## `Range` object. Should come up with a better name.
 """
     step(S::Schaefer, p::PopState)
 
@@ -33,7 +36,9 @@ but each cell steps forward individually.
 """
 function step(S::Schaefer, P::PopState)
     Ptot = sum(P)
-    Pnew = P.P .+  S.r .* P.P * (1 - Ptot / S.K)
+    Pnew = copy(P.P)
+    real_r = S.r * (1 - Ptot / S.K)
+    @. Pnew = P.P + real_r * P.P
     PopState(Pnew)
 end
 
@@ -44,12 +49,18 @@ end
         D::Distribution
 
 Schaefer model with multiplicative process variation as
-described by D.
+described by D, which must have a non-negative support.
 """
-struct SchaeferStoch <: PopulationDynamicsModel
-    r::Float64
-    K::Float64
-    D::Distribution
+struct SchaeferStoch{T<:Real, Td<:Distribution} <: PopulationDynamicsModel
+    r::T
+    K::T
+    D::Td
+
+    function SchaeferStoch(r::T, K::T, D::Td) where {T<:Real, Td<:Distribution}
+        minimum(support(D)) ≥ 0 ||
+            throw(DomainError("Noise distribution must have non-negative support"))
+        new{T, Td}(r, K, D)
+    end
 end
 
 function step(S::SchaeferStoch, P::PopState)
