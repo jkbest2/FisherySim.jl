@@ -1,6 +1,6 @@
 abstract type AbstractTargetingBehavior <: Any end
 
-"Vessels target fishing behavior at random withing the fishery domain."
+"Vessels target fishing behavior at random within the fishery domain."
 struct RandomTargeting <: AbstractTargetingBehavior end
 
 """
@@ -11,11 +11,11 @@ to one) the same dimensions as the DiscreteFisheryDomain, or a function that
 accepts a single argument (typically a Tuple or Array with two elements) of a
 location and returns a preference weight.
 """
-struct PreferentialTargeting{T}
+struct PreferentialTargeting{T} <: AbstractTargetingBehavior
     preference::T
 end
-function PreferentialTargeting(pref::A, Ω::DiscreteFisheryDomain) where A <: AbstractArray
-    all(size(A) .== size(Ω)) ||
+function PreferentialTargeting(pref::Tp, Ω::DiscreteFisheryDomain) where {Tp <: AbstractArray}
+    all(size(pref) .== size(Ω)) ||
         throw(DimensionMismatch("Preference array and domain dimensions must match."))
     PreferentialTargeting(pref)
 end
@@ -25,14 +25,27 @@ function PreferentialTargeting(f::Function, Ω::DiscreteFisheryDomain)
     PreferentialTargeting(pref)
 end
 
-function target(Ω::DiscreteFisheryDomain, t::RandomTargeting, E::Integer = 1)
-    sample(Ω, E; replace = true)
+function target(rng::AbstractRNG,
+                Ω::DiscreteFisheryDomain,
+                t::RandomTargeting,
+                E::Integer = 1)
+    sample(rng, Ω, E; replace = true)
 end
-
+function target(Ω::DiscreteFisheryDomain,
+                t::RandomTargeting,
+                E::Integer = 1)
+    target(Base.Random.GLOBAL_RNG, Ω, t, E)
+end
+function target(rng::AbstractRNG,
+                Ω::DiscreteFisheryDomain,
+                t::PreferentialTargeting{T},
+                E::Integer = 1) where T <: AbstractArray
+    sample(rng, Ω, Weights(vec(t.preference)), E; replace = true)
+end
 function target(Ω::DiscreteFisheryDomain,
                 t::PreferentialTargeting{T},
                 E::Integer = 1) where T <: AbstractArray
-    sample(Ω, Weights(t.preference), E; replace = true)
+    target(Base.Random.GLOBAL_RNG, Ω, t, E)
 end
 
 """
@@ -48,7 +61,7 @@ struct Catchability{Tq}
 end
 ## If q is constant over the domain, just pass the value. Don't need to pass the
 ## DiscreteFisheryDomain, but it's allowed to keep the interface consistent.
-Catchability(q::Real) = Catchability(q)
+Catchability(q::Tq) where Tq<:Real = Catchability{Tq}(q)
 Catchability(q::Real, Ω::DiscreteFisheryDomain) = Catchability(q)
 function Catchability(q::A, Ω::DiscreteFisheryDomain) where A <: AbstractArray
     all(size(q) .== size(Ω)) ||
@@ -61,153 +74,122 @@ function Catchability(f::F, Ω::DiscreteFisheryDomain) where F <: Function
 end
 
 
-function getindex(Q::Catchability{Tq}, i, j) where Tq <: Real
+function getindex(Q::Catchability{Tq}, i, j) where Tq<:Real
     Q.catchability
 end
-function getindex(Q::Catchability{Tq}, i, j) where Tq <: AbstractArray
+function getindex(Q::Catchability{Tq}, i) where Tq<:Real
+    Q.catchability
+end
+function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray
     Q.catchability[i, j]
 end
+function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray
+    Q.catchability[i]
+end
 
-struct Vessel{Tt <: AbstractTargetingBehavior,
-              Tq <: Catchability}
+struct Vessel{Tt, Tq, Tf}
     target::Tt
     catchability::Tq
+    ξ::Tf
+    ϕ::Tf
+    function Vessel(target::Tt,
+                    catchability::Tq,
+                    ξ::Tf,
+                    ϕ::Tf) where {Tt<:AbstractTargetingBehavior,
+                                  Tq<:Catchability,
+                                  Tf<:Real}
+        new{Tt, Tq, Tf}(target, catchability, ξ, ϕ)
+    end
 end
 
-"""
-    SurveyVessel
-
-Vessel in a survey fleet; samples at random within the region.
-"""
-struct SurveyVessel <: Vessel
-    q::Float64
-    Etot::Int
-end
-"""
-    target(::Vessel, ::Popstate)
-
-Choose set of fishing locations for a given vessel.
-"""
-function target(SV::SurveyVessel, P::PopState)
-    sample(1:length(P.P), SV.Etot, replace = true)
-    #rand(Multinomial(SV.Etot, length(P.P)))
+function Tweedie(μ::Tf, v::Vessel{Ta, Tq, Tf}) where {Ta, Tq, Tf<:Real}
+     Tweedie(μ, v.ξ, v.ϕ)
 end
 
-"""
-    FisheryVessel
+## Vector of vessels needs to be abstract type for now; need to figure out small
+## unions to type more concretely
+struct Fleet{Tv, Te<:Integer}
+    vessels::Vector{Tv}
+    total_effort::Vector{Te}
 
-Vessel that targets based on underlying population density.
-"""
-struct FisheryVessel <: Vessel
-    q::Float64
-    Etot::Int
+    function Fleet(vessels::Vector{Tv}, total_effort::Vector{Te}) where {Tv<:Vessel, Te<:Integer}
+        length(vessels) == length(total_effort) ||
+            throw(DimensionMismatch("Must have an effort for each vessel"))
+        new{Tv, Te}(vessels, total_effort)
+    end
 end
-function target(FV::FisheryVessel, P::PopState)
-    sample(1:length(P.P), Weights(P.P), FV.Etot, replace = true)
-    # rand(Multinomial(FV.Etot, P.P ./ sum(P.P)))
-end
+
+getindex(F::Fleet, i) = F.vessels[i]
+vessels(F::Fleet) = F.vessels
+length(F::Fleet) = length(F.vessels)
 
 """
     Catch
+        time::Ti
+        loc_idx::Ti
+        coordinates::Tuple{Tf, Tf}
+        effort::Tf
+        c::Tf
 
 Holds catch and effort data from a given fleet's fishing effort. Does
 not account for within-season depletion.
 """
-struct Catch <: Any
-    locs::Vector{Int}
-    E::Vector{Float64}
-    F::Vector{Float64}
-end
-#function Catch(V::Vessel, P::PopState, σ::Float64)
-#    effort = target(V, P)
-#    ctch = zeros(Float64, effort)
-#    for (loc, eff) in enumerate(effort)
-#        ctch[loc] = rand(LogNormal(log(P.P[loc] * V.q * effort), σ))
-#    end
-#    Catch(effort, ctch)
-#end
+struct Catch{Tf, Ti} <: Any
+    time::Ti
+    loc_idx::Ti
+    coordinates::Tuple{Tf, Tf}
+    effort::Tf
+    catch_biomass::Tf
 
-function Catch(V::Vessel, P::PopState, ξ::Float64, ϕ::Float64)
-    effort = target(V, P)
-    ctch = zeros(Float64, effort)
-    for (idx, eff) in enumerate(effort)
-        ctch[idx] = rand(Tweedie(P.P[idx] * V.q * eff, ξ, ϕ))
+    function Catch(time::Ti, loc_idx::Ti, coordinates::Tuple{Tf, Tf},
+                   effort::Tf, catch_biomass::Tf) where {Tf<:Real, Ti<:Integer}
+        new{Tf, Ti}(time, loc_idx, coordinates, effort, catch_biomass)
     end
-    Catch(effort, ctch)
 end
 
-function logistic(lpop; k = 2e5, lpop0 = 1e-5)
-    1 / (1 + exp(-k * (lpop - lpop0)))
-end
-
-# FIXME: add a Fleet type to deal with this better?
 """
-    fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64, p0::F) where F<:Function
+    fish!(P::PopState, V::Vessel, Ω::AbstractFisheryDomain, t::Integer)
 
-Fish the current population with the fleet in `VV`. Catches
-are removed from the current population in random order over
-the course of a season. Currently assumes constant effort at
-each location that is fished (i.e. effort is 1 exactly).
+Fish down a population state P. Returns a `Catch` object, mutates the
+PopState in place. Limited to biomass available in a cell.
 """
-function fish(P::PopState, Fleet::Vector{Vessel}, σ::Float64, Ppos::F) where F<:Function
-    nv = length(Fleet)
-    nloc = length(P.P)
-
-    # Figure out which cells will be fished this season for each vessel
-    effort = target.(Fleet, P)
-
-    ctch = Vector{Vector{Float64}}(nv)
-    eff = Vector{Vector{Float64}}(nv)
-    # Need to be able to index into each vessel for param values.
-    v_idx = deepcopy(effort)
-    for v in 1:nv
-        fill!(v_idx[v], v)
-        ctch[v] = zeros(Float64, nloc)
-        eff[v] = zeros(Float64, nloc)
+function fish!(P::PopState,
+               V::Vessel,
+               Ω::AbstractFisheryDomain,
+               t::Integer = 0)
+    target_location = target(Ω, V.target)[1]
+    μ = P.P[target_location] * V.catchability[target_location]
+    if μ == 0
+        catch_biomass = μ
+    else
+        catch_biomass = rand(Tweedie(μ, V.ξ, V.ϕ))
     end
-
-    eff_vec, vvec = vcat(effort...), vcat(v_idx...)
-    fish_order = randperm(length(vvec))
-
-    Pnext = deepcopy(P)
-    for trip in fish_order
-        loc = eff_vec[trip]
-        v = vvec[trip]
-        c = 0.0
-        if Pnext.P[loc] > 0 && (rand() < Ppos(Pnext.P[loc] .* Fleet[v].q))
-            c = rand(LogNormal(log(Pnext.P[loc] * Fleet[v].q) - σ^2 / 2, σ))
-        else
-            c = 0.0
-        end
-        if Pnext.P[loc] > c
-            Pnext.P[loc] -= c
-            ctch[v][loc] += c
-        else
-            ctch[v][loc] = Pnext.P[loc]
-            Pnext.P[loc] = 0.0
-        end
-        eff[v][loc] += 1
+    if catch_biomass > P.P[target_location]
+        catch_biomass = P[target_location]
     end
-
-    Crec = Vector{Catch}(2)
-    for v in 1:nv
-        fished = eff[v] .> 0
-        locvec = collect(1:length(eff[v]))[fished]
-        Crec[v] = Catch(locvec, eff[v][fished], ctch[v][fished])
-    end
-    Pnext, Crec
+    setindex!(P, P[target_location] - catch_biomass, target_location
+    # P[target_location] = P[target_location] - catch_biomass
+    C = Catch(t, target_location, Ω.locs[target_location],
+              convert(typeof(catch_biomass), 1), catch_biomass)
 end
 
-struct CPUE
-    locs::Vector{Int}
-    cpue::Vector{Float64}
-end
-CPUE(C::Catch) = CPUE(C.locs, C.F ./ C.E)
+"""
+    fish!(P::PopState, F::Fleet, Ω::AbstractFisheryDomain, t::Integer)
 
-# function +(C1::Catch, C2::Catch)
-#     Catch(C1.E .+ C2.E, C1.F .+ C2.F)
-# end
-
-function -(P::PopState, C::Catch)
-    PopState(P.P .- C.F)
+Fish down a population P using vessels in fleet F and their associated efforts.
+Vessels harvest in random order and cells are sequentially depleted.
+"""
+function fish!(P::PopState{Tf},
+               F::Fleet,
+               Ω::AbstractFisheryDomain,
+               t::Ti = 0) where {Tf<:Real, Ti<:Integer}
+    effort_vec = reduce(vcat, [repeat([vessel_idx], inner = [tot_eff]) for
+                               (vessel_idx, tot_eff) in enumerate(F.total_effort)])
+    catch_record = Vector{Catch{Tf, Ti}}()
+    shuffle!(effort_vec)
+    for idx in effort_vec
+        c = fish!(P, F[idx], Ω, t)
+        push!(catch_record, c)
+    end
+    catch_record
 end

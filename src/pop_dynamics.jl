@@ -13,6 +13,11 @@ end
 vecstate(P::PopState) = vec(P.P)
 sum(P::PopState) = sum(P.P)
 
+getindex(P::PopState, i) = P.P[i]
+getindex(P::PopState, i, j) = P.P[i, j]
+setindex!(P::PopState, x, i) = setindex!(P.P, x, i)
+setindex!(P::PopState, x, i, j) = setindex!(P.P, x, i, j)
+
 """
     Schaefer{T<:Real}
         r::T

@@ -3,8 +3,10 @@ module FisherySim
 using Distributions
 using Rtweedie
 using StatsBase
+using StatsFuns         # For `logit` and `logistic`; worth it?
 
-import Base: rand, +, -, step, sum, getindex, size, length
+import Base: rand, +, -, step, sum, getindex, setindex!, size, length
+import Rtweedie: Tweedie
 import StatsBase: sample
 
 include("fisherydomain.jl")
@@ -29,7 +31,8 @@ export PopulationDynamicsModel,
        step,
        sum,
        SchaeferStoch,
-       SchaeferKStoch
+       SchaeferKStoch,
+       setindex!
 
 include("movement.jl")
 export MovementModel, eqdist, approx_eqdist
@@ -45,8 +48,10 @@ export AbstractTargetingBehavior,
        logistic,
        CPUE,
        +, -,
-       fish,
-       getindex
+       fish!,
+       getindex,
+       Fleet,
+       vessels
 
 include("simulation.jl")
 export simulate

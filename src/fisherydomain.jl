@@ -43,22 +43,23 @@ end
 size(Ω::GriddedFisheryDomain) = Ω.n
 length(Ω::GriddedFisheryDomain) = prod(Ω.n)
 
-function sample(rng, Ω::GriddedFisheryDomain, E::Integer)
+function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
     N = prod(Ω.n)
-    sample(rng, 1:N, E, replace = true)
+    sample(rng, 1:N, E; replace = replace)
 end
-function sample(Ω::GriddedFisheryDomain, E::Integer)
-    sample(Base.Random.GLOBAL_RNG, Ω, E)
+function sample(Ω::GriddedFisheryDomain, E::Integer; replace = true)
+    sample(Base.Random.GLOBAL_RNG, Ω, E; replace = replace)
 end
 function sample(rng::AbstractRNG,
                 Ω::GriddedFisheryDomain,
                 w::StatsBase.AbstractWeights,
-                E::Integer)
+                E::Integer;
+                replace = true)
     N = length(Ω)
-    sample(rng, 1:N, w, E, replace = true)
+    sample(rng, 1:N, w, E; replace = replace)
 end
-function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer)
-    sample(Base.Random.GLOBAL_RNG, Ω, w, E)
+function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer; replace = true)
+    sample(Base.Random.GLOBAL_RNG, Ω, w, E; replace = replace)
 end
 
 """

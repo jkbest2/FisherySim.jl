@@ -101,6 +101,59 @@ Phalf1 = step(schaef, Phalf)
 @testset "Population dynamics" begin
     @test sum(P1) ≈ K
     @test all(vecstate(P1) .== vecstate(eqdist_ap))
-    @test all(vecstate(Phalf1) .> vecstate(Phalf))
+    @test all(vecstate(Phalf1) .≥ vecstate(Phalf))
     @test sum(Phalf1) ≈ 51.25
+end
+
+target_rand = RandomTargeting()
+target_pref = PreferentialTargeting(l -> 2 * l[1], Ω)
+
+rand_t = target(Ω, target_rand, 400)
+pref_t = target(Ω, target_pref, 400)
+pref_hist = fit(Histogram, pref_t, closed = :right)
+
+q_const = Catchability(0.2, Ω)
+q_vary = Catchability(l -> 2 * l[2], Ω)
+
+## These have to be fairly high to get many non-zero catches.
+## These give ~10% zeros. These (especially ϕ?) may be good for testing,
+## as they result in completely fishing out some cells, testing that check.
+ξ = 1.9
+ϕ = 1.9
+
+v1 = Vessel(target_rand, q_const, ξ, ϕ)
+v2 = Vessel(target_pref, q_const, ξ, ϕ)
+v3 = Vessel(target_rand, q_vary, ξ, ϕ)
+v4 = Vessel(target_pref, q_vary, ξ, ϕ)
+
+P =  PopState(0.005 * ones(10, 20))
+c1 = fish!(P, v1, Ω)
+
+fleet = Fleet([v1, v2, v3, v4], [100, 100, 100, 100])
+
+c2 = fish!(P, fleet, Ω)
+total_catch = sum(getfield.(c2, :catch_biomass))
+
+@testset "Vessels" begin
+    ## Need to have range in a container for broadcasting to work correctly
+    @test all(rand_t .∈ [1:length(Ω)])
+    @test all(pref_t .∈ [1:length(Ω)])
+    ## Implicitly tested by sample tests in "Fishery domain" testset
+    @test pref_hist.weights[1] < pref_hist.weights[end]
+    @test q_const[5] == 0.2
+    @test q_const[200] == 0.2
+    @test q_const[1, 1] == 0.2
+    @test q_const[5, 15] == 0.2
+    @test q_vary[5, 15] == 145.0
+    @test q_vary[35] == 35.0
+
+    @test c1 isa Catch
+    @test any(P.P .!= 0.005)
+    
+    @test vessels(fleet) == fleet.vessels
+    @test c1.catch_biomass > 0
+
+    @test sum(getfield.(c2, :catch_biomass)) > 0
+    @test sum(P.P) < 1
+
 end
