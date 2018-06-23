@@ -167,8 +167,7 @@ function fish!(P::PopState,
     if catch_biomass > P.P[target_location]
         catch_biomass = P[target_location]
     end
-    setindex!(P, P[target_location] - catch_biomass, target_location
-    # P[target_location] = P[target_location] - catch_biomass
+    setindex!(P, P[target_location] - catch_biomass, target_location)
     C = Catch(t, target_location, Ω.locs[target_location],
               convert(typeof(catch_biomass), 1), catch_biomass)
 end

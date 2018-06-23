@@ -80,6 +80,7 @@ eqdist_ex = eqdist(move, 100.0)
 eqdist_ap = approx_eqdist(move, 100.0)
 
 @testset "Movement models" begin
+    @test all(sum(move.M, 1) .≈ 1)
     @test all(0 .≤ vecstate(eqdist_ex0) .≤ 1)
     @test all(0 .≤ vecstate(eqdist_ap0) .≤ 1)
     @test sum(eqdist_ex0) ≈ 1.0
@@ -126,7 +127,7 @@ v2 = Vessel(target_pref, q_const, ξ, ϕ)
 v3 = Vessel(target_rand, q_vary, ξ, ϕ)
 v4 = Vessel(target_pref, q_vary, ξ, ϕ)
 
-P =  PopState(0.005 * ones(10, 20))
+P = PopState(0.005 * ones(10, 20))
 c1 = fish!(P, v1, Ω)
 
 fleet = Fleet([v1, v2, v3, v4], [100, 100, 100, 100])
@@ -151,9 +152,36 @@ total_catch = sum(getfield.(c2, :catch_biomass))
     @test any(P.P .!= 0.005)
     
     @test vessels(fleet) == fleet.vessels
-    @test c1.catch_biomass > 0
+    @test c1.catch_biomass ≥ 0
 
     @test sum(getfield.(c2, :catch_biomass)) > 0
     @test sum(P.P) < 1
+end
 
+P1 = PopState(0.5 * ones(10, 20))
+@show sum(P1)
+Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, 5)
+
+Psums = sum.(Pvec)
+
+function getcatch(CV::Vector{C}) where {C<:Catch}
+    timevec = getfield.(CV, :time)
+    catchvec = getfield.(CV, :catch_biomass)
+    catchtot = zeros(length(unique(timevec)))
+    for (t, c) in zip(timevec, catchvec)
+        catchtot[t] += c
+    end
+    catchtot
+end
+
+Csums = getcatch(Cvec)
+
+p2 =  begin
+          rempop = Psums[1] - Csums[1]
+          rempop + rempop * r * (1 - rempop / K)
+      end
+
+@testset "Simulate" begin
+    @test p2 ≈ Psums[2]
+    @test Psums[1] == sum(P1)
 end

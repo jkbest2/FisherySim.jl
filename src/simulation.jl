@@ -1,10 +1,10 @@
 """
-    simulate(P0::PopState,
+    simulate(P::PopState,
+             F::Fleet,
              M::MovementModel,
-             S::Schaefer,
-             Fleet::Vector{Vessels},
-             T::Int, σ::Float64,
-             Ppos::F) where F<:Function
+             PopDy::PopulationDynamicsModel,
+             Ω::AbstractFisheryDomain,
+             T::Int)
 
 Simulate the population from P0 forward `T` years, by:
 
@@ -13,38 +13,21 @@ Simulate the population from P0 forward `T` years, by:
 3. Step the regional Schaefer model forward, distributing new
    individuals proportionally.
 """
-function simulate(P0::PopState,
+function simulate(P0::PopState{Tf},
+                  F::Fleet,
                   M::MovementModel,
-                  S::PopulationDynamicsModel,
-                  Fleet::Vector{Vessel},
-                  T::Int, σ::Float64,
-                  Ppos::F) where F<:Function
-    Pvec = Vector{PopState}(T + 1)
-    Pvec[1] = P0
-    Crecord = Vector{Vector{Catch}}(T)
-
-    for yr in 2:(T + 1)
-        Pf, Crecord[yr - 1] = fish(Pvec[yr - 1], Fleet, σ, Ppos)
-        Pm = M(Pf)
-        Pvec[yr] = step(S, Pm)
+                  PopDy::PopulationDynamicsModel,
+                  Ω::AbstractFisheryDomain,
+                  T::Ti) where {Tf<:Real, Ti<:Integer}
+    P = copy(P0)
+    Pvec = Vector{typeof(P)}()
+    Cvec = Vector{Catch{Tf, Ti}}()
+    for t in 1:T
+        push!(Pvec, copy(P))
+        c = fish!(P, F, Ω, t)
+        append!(Cvec, c)
+        P = M(P)                # TODO: Make these two steps in-place?
+        P = step(PopDy, P)
     end
-
-    Pvec, Crecord
+    Pvec, Cvec
 end
-# function simulate(P0::PopState,
-#                   M::MovementModel,
-#                   S::PopulationDynamicsModel,
-#                   Fleet::Vector{Vessel},
-#                   T::Int, σ::Float64)
-#     Pvec = Vector{PopState}(T + 1)
-#     Pvec[1] = P0
-#     Crecord = Vector{Vector{Catch}}(T)
-#
-#     for yr in 2:(T + 1)
-#         Pf, Crecord[yr - 1] = fish(Pvec[yr - 1], Fleet, σ)
-#         Pm = M(Pf)
-#         Pvec[yr] = step(S, Pm)
-#     end
-#
-#     Pvec, Crecord
-# end

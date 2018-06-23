@@ -25,7 +25,10 @@ function MovementModel(B::Bathymetry,
     MovementModel(mvt', size(B.Ω))
 end
 
-(M::MovementModel)(P::PopState) = PopState(M.M * vecstate(P.P))
+function (M::MovementModel)(P::PopState)
+    p = M.M * vecstate(P)
+    PopState(reshape(p, M.Ωsize...))
+end
 
 """
     eqdist(M::MovementModel)
