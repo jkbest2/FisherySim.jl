@@ -5,7 +5,7 @@ using Rtweedie
 using StatsBase
 using StatsFuns         # For `logit` and `logistic`; worth it?
 
-import Base: rand, +, -, step, sum, getindex, setindex!, size, length
+import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
 import Rtweedie: Tweedie
 import StatsBase: sample
 
@@ -32,7 +32,8 @@ export PopulationDynamicsModel,
        sum,
        SchaeferStoch,
        SchaeferKStoch,
-       setindex!
+       setindex!,
+       copy
 
 include("movement.jl")
 export MovementModel, eqdist, approx_eqdist
