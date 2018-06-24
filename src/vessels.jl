@@ -136,14 +136,16 @@ not account for within-season depletion.
 """
 struct Catch{Tf, Ti} <: Any
     time::Ti
+    vessel_idx::Ti
     loc_idx::Ti
     coordinates::Tuple{Tf, Tf}
     effort::Tf
     catch_biomass::Tf
 
-    function Catch(time::Ti, loc_idx::Ti, coordinates::Tuple{Tf, Tf},
+    function Catch(time::Ti, vessel_idx::Ti,
+                   loc_idx::Ti, coordinates::Tuple{Tf, Tf},
                    effort::Tf, catch_biomass::Tf) where {Tf<:Real, Ti<:Integer}
-        new{Tf, Ti}(time, loc_idx, coordinates, effort, catch_biomass)
+        new{Tf, Ti}(time, vessel_idx, loc_idx, coordinates, effort, catch_biomass)
     end
 end
 
@@ -156,7 +158,8 @@ PopState in place. Limited to biomass available in a cell.
 function fish!(P::PopState,
                V::Vessel,
                Ω::AbstractFisheryDomain,
-               t::Integer = 0)
+               t::Integer = 0,
+               vessel_idx = 0)
     target_location = target(Ω, V.target)[1]
     μ = P.P[target_location] * V.catchability[target_location]
     if μ == 0
@@ -168,7 +171,7 @@ function fish!(P::PopState,
         catch_biomass = P[target_location]
     end
     setindex!(P, P[target_location] - catch_biomass, target_location)
-    C = Catch(t, target_location, Ω.locs[target_location],
+    C = Catch(t, vessel_idx, target_location, Ω.locs[target_location],
               convert(typeof(catch_biomass), 1), catch_biomass)
 end
 
@@ -187,7 +190,7 @@ function fish!(P::PopState{Tf},
     catch_record = Vector{Catch{Tf, Ti}}()
     shuffle!(effort_vec)
     for idx in effort_vec
-        c = fish!(P, F[idx], Ω, t)
+        c = fish!(P, F[idx], Ω, t, idx)
         push!(catch_record, c)
     end
     catch_record
