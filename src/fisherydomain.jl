@@ -20,6 +20,14 @@ struct GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
         new(origin, antipode, n, locs, distances)
     end
 end
+"""
+    GriddedFisheryDomain(origin::Tuple{T, T},
+                         antipode::Tuple{T, T},
+                         n::Tuple{Tn, Tn}) where {T<:Real, Tn<:Integer}
+
+Construct a rectangular GriddedFisheryDomain with near and far corners 
+origin and antipode respecitively, and n grid cells in each direction.
+"""
 function GriddedFisheryDomain(origin::Tuple{T, T},
                               antipode::Tuple{T, T},
                               n::Tuple{Tn, Tn}) where {T <: Real, Tn <: Integer}
