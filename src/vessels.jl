@@ -87,6 +87,18 @@ function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray
     Q.catchability[i]
 end
 
+"""
+    Vessel
+        target::AbstractTargetingBehavior
+        catchability::Catchability
+        ξ::Real
+        ϕ::Real
+
+Describes the behavior of a fishing vessel, including its targeting strategy
+(random or preferential), its catchability coefficient (which may vary across
+space), and the parameters of the Tweedie distribution that govern its catch
+distribution.
+"""
 struct Vessel{Tt, Tq, Tf}
     target::Tt
     catchability::Tq
