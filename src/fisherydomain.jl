@@ -1,6 +1,16 @@
 abstract type AbstractFisheryDomain <: Any end
 abstract type DiscreteFisheryDomain <: AbstractFisheryDomain end 
 
+"""
+    GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
+        origin::Tuple{T, T}
+        antipode::Tuple{T, T}
+        n::Tuple{Ti, Ti}
+        locs::Array{Tuple{T, T}, 2}
+        distances::Array{T, 2}
+
+Type to describe a rectangualr, gridded domain.
+"""
 struct GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
     origin::Tuple{T, T}
     antipode::Tuple{T, T}
