@@ -9,7 +9,7 @@ abstract type DiscreteFisheryDomain <: AbstractFisheryDomain end
         locs::Array{Tuple{T, T}, 2}
         distances::Array{T, 2}
 
-Type to describe a rectangualr, gridded domain.
+Type to describe a rectangular, gridded domain.
 """
 struct GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
     origin::Tuple{T, T}
@@ -35,7 +35,7 @@ end
                          antipode::Tuple{T, T},
                          n::Tuple{Tn, Tn}) where {T<:Real, Tn<:Integer}
 
-Construct a rectangular GriddedFisheryDomain with near and far corners 
+Construct a rectangular GriddedFisheryDomain with near and far corners
 origin and antipode respecitively, and n grid cells in each direction.
 """
 function GriddedFisheryDomain(origin::Tuple{T, T},
@@ -46,7 +46,7 @@ function GriddedFisheryDomain(origin::Tuple{T, T},
     domain_size = abs.(antipode .- origin)
     stepsize = domain_size ./ n
     offset = stepsize ./ 2
-    locranges = range.(origin .+ offset, stepsize, n)
+    locranges = LinRange.(origin .+ offset, antipode .- offset, n)
     locs = collect(Base.product(locranges...))
 
     distances = calculate_distances(locs)
@@ -66,9 +66,9 @@ function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
     sample(rng, 1:N, E; replace = replace)
 end
 function sample(Ω::GriddedFisheryDomain, E::Integer; replace = true)
-    sample(Base.Random.GLOBAL_RNG, Ω, E; replace = replace)
+    sample(Random.GLOBAL_RNG, Ω, E; replace = replace)
 end
-function sample(rng::AbstractRNG,
+function sample(rng::Random.AbstractRNG,
                 Ω::GriddedFisheryDomain,
                 w::StatsBase.AbstractWeights,
                 E::Integer;
@@ -77,7 +77,7 @@ function sample(rng::AbstractRNG,
     sample(rng, 1:N, w, E; replace = replace)
 end
 function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer; replace = true)
-    sample(Base.Random.GLOBAL_RNG, Ω, w, E; replace = replace)
+    sample(Random.GLOBAL_RNG, Ω, w, E; replace = replace)
 end
 
 """
@@ -88,14 +88,14 @@ upper triangle of distances, then make symmetric, returning a Matrix{T, 2}.
 """
 function calculate_distances(locs::Array{Tuple{T, T}, 2}) where T <: Real
     N = prod(size(locs))
-    distances = Array{T, 2}(N, N)
+    distances = Array{T, 2}(undef, N, N)
     for j in 1:N
         for i in 1:(j - 1)
             distances[i, j] = hypot((locs[i] .- locs[j])...)
         end
         distances[j, j] = zero(T)
     end
-    Matrix(Symmetric(distances))
+    Matrix(Symmetric(distances, :U))
 end
 
 """
@@ -106,9 +106,9 @@ the upper-triangular elements and mirroring, returning the full matrix.
 """
 function map_symm(f::F, A::Array{T, 2}) where {F<:Function, T}
     I, J = size(A)
-    res = zeros(A)
+    res = similar(A)
     for j in 1:J, i in 1:j
         res[i, j] = f(A[i, j])
     end
-    Matrix(Symmetric(res))
+    Symmetric(res, :U)
 end

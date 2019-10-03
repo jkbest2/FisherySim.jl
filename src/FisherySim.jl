@@ -4,6 +4,8 @@ using Distributions
 using Rtweedie
 using StatsBase
 using StatsFuns         # For `logit` and `logistic`; worth it?
+using LinearAlgebra
+using Random
 
 import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
 import Rtweedie: Tweedie

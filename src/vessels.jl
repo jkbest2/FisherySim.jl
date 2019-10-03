@@ -25,7 +25,7 @@ function PreferentialTargeting(f::Function, Ω::DiscreteFisheryDomain)
     PreferentialTargeting(pref)
 end
 
-function target(rng::AbstractRNG,
+function target(rng::Random.AbstractRNG,
                 Ω::DiscreteFisheryDomain,
                 t::RandomTargeting,
                 E::Integer = 1)
@@ -34,9 +34,9 @@ end
 function target(Ω::DiscreteFisheryDomain,
                 t::RandomTargeting,
                 E::Integer = 1)
-    target(Base.Random.GLOBAL_RNG, Ω, t, E)
+    target(Random.GLOBAL_RNG, Ω, t, E)
 end
-function target(rng::AbstractRNG,
+function target(rng::Random.AbstractRNG,
                 Ω::DiscreteFisheryDomain,
                 t::PreferentialTargeting{T},
                 E::Integer = 1) where T <: AbstractArray
@@ -45,7 +45,7 @@ end
 function target(Ω::DiscreteFisheryDomain,
                 t::PreferentialTargeting{T},
                 E::Integer = 1) where T <: AbstractArray
-    target(Base.Random.GLOBAL_RNG, Ω, t, E)
+    target(Random.GLOBAL_RNG, Ω, t, E)
 end
 
 """

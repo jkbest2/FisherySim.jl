@@ -12,7 +12,7 @@ end
 function MovementModel(B::Bathymetry, distance::Distributions.UnivariateDistribution)
     mvt = pdf.(dist, B.Ω.distances)
     mvt ./= sum(mvt, 2)
-    MovementModel(mvt', size(B.Ω))
+    MovementModel(Matrix(mvt'), size(B.Ω))
 end
 
 function MovementModel(B::Bathymetry,
@@ -21,8 +21,8 @@ function MovementModel(B::Bathymetry,
     distmvt = pdf.(distance, B.Ω.distances)
     dpthmvt = pdf.(depth, vec(B.bathymetry))
     mvt = distmvt .* dpthmvt'
-    mvt ./= sum(mvt, 2)
-    MovementModel(mvt', size(B.Ω))
+    mvt ./= sum(mvt; dims = 2)
+    MovementModel(Matrix(mvt'), size(B.Ω))
 end
 
 function (M::MovementModel)(P::PopState)
@@ -57,7 +57,7 @@ end
 
 ## TODO: Should stopping criterion rely on Rayleigh quotient giving an
 ## eigenvalue of one, rather than estimated eigenvector convergence?
-## Also consider using ARPACK.jl (new, with FORTRAN deps) or 
+## Also consider using ARPACK.jl (new, with FORTRAN deps) or
 ## IterativeSolvers.jl
 """
     approx_eqdist(M::MovementModel, B0::Real)
