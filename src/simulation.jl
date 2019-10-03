@@ -27,7 +27,7 @@ function simulate(P0::PopState{Tf},
         c = fish!(P, F, Ω, t)
         append!(Cvec, c)
         P = M(P)                # TODO: Make these two steps in-place?
-        P = step(PopDy, P)
+        P = PopDy(P)
     end
     Pvec, Cvec
 end

@@ -31,16 +31,14 @@ struct Schaefer{T<:Real} <: PopulationDynamicsModel
     K::T
 end
 
-## FIXME: This is a bad pun on `step`, which is used to get the step size of a
-## `Range` object. Should come up with a better name.
 """
-    step(S::Schaefer, p::PopState)
+    (S::Schaefer)(p::PopState)
 
-Step a population dynamics model forward by one time increment.
-Population change is based on a region-wide carrying capacity,
-but each cell steps forward individually.
-"""
-function step(S::Schaefer, P::PopState)
+Step a population state forward by one time increment. Population change is
+based on a region-wide carrying capacity, but each cell steps forward
+individually.
+ """
+function (S::Schaefer)(P::PopState)
     Ptot = sum(P)
     Pnew = copy(P.P)
     real_r = S.r * (1 - Ptot / S.K)
@@ -49,44 +47,69 @@ function step(S::Schaefer, P::PopState)
 end
 
 """
-    SchaeferStoch
-        r::Float64
-        K::Float64
-        D::Distribution
+    PellaTomlinson{T<:Real}
+        r::T
+        K::T
+        m::T
 
-Schaefer model with multiplicative process variation as
-described by D, which must have a non-negative support.
+A Pella-Tomlinson population dynamics model with growth rate `r`, carrying
+capacity `K`, and shape parameter `m`. Population will change over time
+following
+
+```math
+P_{t+1} = P_t + \\frac{r}{m-1} P_t \\left(1 - \\left(\\frac{\\sum P_t}{K}\\right)^{m-1}\\right)
+```
 """
-struct SchaeferStoch{T<:Real, Td<:Distribution} <: PopulationDynamicsModel
+struct PellaTomlinson{T<:Real} <: PopulationDynamicsModel
     r::T
     K::T
-    D::Td
-
-    function SchaeferStoch(r::T, K::T, D::Td) where {T<:Real, Td<:Distribution}
-        minimum(support(D)) ≥ 0 ||
-            throw(DomainError("Noise distribution must have non-negative support"))
-        new{T, Td}(r, K, D)
-    end
-end
-
-function step(S::SchaeferStoch, P::PopState)
-    Pnew = step(Schaefer(S.r, S.K), P)
-    PopState(rand(S.D, length(Pnew.P)) .* Pnew.P)
+    m::T
 end
 
 """
-    SchaeferKStoch
-        r::Float64
-        Kdist::Distibution
+    (PT::PellaTomlinson)(P::PopState)
 
-Schaefer model with random deviations of K
+Step a population state forward by one time increment. Population change is
+based on a region-wide carrying capacity but each cell steps forward
+independently.
 """
-struct SchaeferKStoch <: PopulationDynamicsModel
-    r::Float64
-    Kdist::Distribution
+function (PT::PellaTomlinson)(P::PopState)
+    Ptot = sum(P)
+    Pnew = copy(P.P)
+    real_r = PT.r / (m - 1) * (1 - (Ptot / PT.K) ^ (m - 1))
+    @. Pnew = P.P + real_r * P.P
 end
 
-function step(S::SchaeferKStoch, P::PopState)
-    K = rand(S.Kdist)
-    step(Schaefer(S.r, K), P)
+"""
+    StochasticProduction{M<:PopulationDynamicsModel, D<:Distribution}
+        dynmod::M
+        dist::D
+
+Use `dynmod` population dynamics, and then apply multiplicative noise in the
+resulting population.
+"""
+struct StochasticProduction{M<:PopulationDynamicsModel, D<:Distribution} <:PopulationDynamicsModel
+    dynmod::M
+    dist::D
+end
+
+function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:UnivariateDistribution}
+    Pnew = sp.dynmod(P)
+    Pnew .* rand(sp.dist, length(Pnew))
+end
+
+function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:MultivariateDistribution}
+    Pnew = sp.dynmod(P)
+    Pnew .* rand(sp.dist)
+end
+
+"""
+    mean1MvLogNormal(Σ::AbstractMatrix)
+
+Construct a multivariate log normal distribution with scale parameter Σ and mean
+a ones vector of appropriate size.
+"""
+function mean1MvLogNormal(Σ::AbstractMatrix)
+    loc = location(MvLogNormal, :mean, ones(size(Σ, 1)), Σ)
+    MvLogNormal(loc, Σ)
 end

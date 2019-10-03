@@ -29,11 +29,11 @@ include("pop_dynamics.jl")
 export PopulationDynamicsModel,
        PopState,
        Schaefer,
+       PellaTomlinson,
+       StochasticProduction,
        vecstate,
        step,
        sum,
-       SchaeferStoch,
-       SchaeferKStoch,
        setindex!,
        copy
 
