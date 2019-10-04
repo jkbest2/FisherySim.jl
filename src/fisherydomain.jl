@@ -1,5 +1,5 @@
 abstract type AbstractFisheryDomain <: Any end
-abstract type DiscreteFisheryDomain <: AbstractFisheryDomain end 
+abstract type DiscreteFisheryDomain <: AbstractFisheryDomain end
 
 """
     GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
@@ -53,11 +53,17 @@ function GriddedFisheryDomain(origin::Tuple{T, T},
 
     GriddedFisheryDomain{T, Tn}(origin, antipode, n, locs, distances)
 end
+## Version where `n` is equal along each axis
 function GriddedFisheryDomain(origin::Tuple{T, T},
                               antipode::Tuple{T, T},
                               n::Tn) where {T <: Real, Tn <: Integer}
     GriddedFisheryDomain(origin, antipode, (n, n))
 end
+## Default to 100×100 grid with 100 cells in each direction
+function GriddedFisheryDomain()
+    GriddedFisheryDomain((0.0, 0.0), (100.0, 100.0), (100, 100))
+end
+
 size(Ω::GriddedFisheryDomain) = Ω.n
 length(Ω::GriddedFisheryDomain) = prod(Ω.n)
 
