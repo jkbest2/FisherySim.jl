@@ -19,6 +19,10 @@ setindex!(P::PopState, x, i) = setindex!(P.P, x, i)
 setindex!(P::PopState, x, i, j) = setindex!(P.P, x, i, j)
 copy(P::PopState) = PopState(copy(P.P))
 
+length(P::PopState) = length(P.P)
+size(P::PopState) = size(P.P)
+size(P::PopState, n::Integer) = size(P.P, n)
+
 """
     Schaefer{T<:Real}
         r::T
@@ -40,10 +44,12 @@ individually.
  """
 function (S::Schaefer)(P::PopState)
     Ptot = sum(P)
-    Pnew = copy(P.P)
+    Pnew = copy(P)
     real_r = S.r * (1 - Ptot / S.K)
-    @. Pnew = P.P + real_r * P.P
-    PopState(Pnew)
+    # Here and below, can't use @. macro because then Pnew.P is lowered to
+    # getfield.(Pnew, :P), which doesn't work (or make sense).
+    Pnew.P .= P.P .+ real_r .* P.P
+    Pnew
 end
 
 """
@@ -59,6 +65,9 @@ following
 ```math
 P_{t+1} = P_t + \\frac{r}{m-1} P_t \\left(1 - \\left(\\frac{\\sum P_t}{K}\\right)^{m-1}\\right)
 ```
+
+Note that the Schaefer model is a special case of this model where ``m = 2``,
+and the Fox model is a limiting case where ``m \\to 1``.
 """
 struct PellaTomlinson{T<:Real} <: PopulationDynamicsModel
     r::T
@@ -75,9 +84,10 @@ independently.
 """
 function (PT::PellaTomlinson)(P::PopState)
     Ptot = sum(P)
-    Pnew = copy(P.P)
-    real_r = PT.r / (m - 1) * (1 - (Ptot / PT.K) ^ (m - 1))
-    @. Pnew = P.P + real_r * P.P
+    Pnew = copy(P)
+    real_r = PT.r / (PT.m - 1) * (1 - (Ptot / PT.K) ^ (PT.m - 1))
+    @. Pnew.P = P.P + real_r * P.P
+    Pnew
 end
 
 """
@@ -95,12 +105,14 @@ end
 
 function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:UnivariateDistribution}
     Pnew = sp.dynmod(P)
-    Pnew .* rand(sp.dist, length(Pnew))
+    Pnew.P .= Pnew.P .* rand(sp.dist, size(Pnew)...)
+    Pnew
 end
 
 function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:MultivariateDistribution}
     Pnew = sp.dynmod(P)
-    Pnew .* rand(sp.dist)
+    Pnew.P .= Pnew.P .* reshape(rand(sp.dist), size(Pnew)...)
+    Pnew
 end
 
 """
@@ -113,3 +125,9 @@ function mean1MvLogNormal(Σ::AbstractMatrix)
     loc = location(MvLogNormal, :mean, ones(size(Σ, 1)), Σ)
     MvLogNormal(loc, Σ)
 end
+
+function mean1MvLogNormal(Σ::AbstractPDMat)
+    loc = location(MvLogNormal, :mean, ones(size(Σ, 1)), Σ.mat)
+    MvLogNormal(loc, Σ)
+end
+

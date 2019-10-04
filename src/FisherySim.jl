@@ -6,6 +6,7 @@ using StatsBase
 using StatsFuns         # For `logit` and `logistic`; worth it?
 using LinearAlgebra
 using Random
+using PDMats
 
 import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
 import Rtweedie: Tweedie
@@ -23,7 +24,9 @@ export AbstractFisheryDomain,
        ## map_symm
 
 include("bathymetry.jl")
-export BathymetryModel, Bathymetry, rand
+export BathymetryModel,
+       Bathymetry,
+       rand
 
 include("pop_dynamics.jl")
 export PopulationDynamicsModel,

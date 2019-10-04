@@ -6,13 +6,28 @@ Exponential covariance kernel.
 function expcov(dist, σ, ϕ)
     σ * exp(-dist / ϕ)
 end
+
+"""
+    mat32(d, σ, ϕ)
+
+Matérn covariance with smoothness parameter ν = 3/2.
+
+```math
+\\Cov(d) = \\sigma^2 \\left(1 + \\frac{\\sqrt{3} d}{\\phi}\\right)
+     \\exp\\left(-\\frac{\\sqrt{3} d}{\\phi}\\right)
+```
+"""
+function mat32(dist, σ², ϕ)
+    σ² * (1 + √3 * dist / ϕ) * exp(-√3 * dist / ϕ)
+end
+
 """
     sqexpcov(dist, σ, ϕ)
 
 Squared exponential covariance kernel.
 """
-function sqexpcov(dist, σ, ϕ)
-    σ * exp(-dist^2 / 2 / ϕ)
+function sqexpcov(dist, σ², ϕ)
+    σ² * exp(-dist^2 / 2 / ϕ)
 end
 
 """
@@ -61,12 +76,12 @@ struct Bathymetry{T<:Real, Tω<:AbstractFisheryDomain} <: Any
     end
 end
 
-function rand(rng::AbstractRNG, BM::BathymetryModel)
+function rand(rng::Random.AbstractRNG, BM::BathymetryModel)
     bathy = rand(BM.D)
     bathy .-= minimum(bathy)
     Bathymetry(reshape(bathy, size(BM.Ω)...), BM.Ω)
 end
-rand(BM::BathymetryModel) = rand(Base.Random.GLOBAL_RNG, BM)
+rand(BM::BathymetryModel) = rand(Random.GLOBAL_RNG, BM)
 
 getindex(B::Bathymetry, i, j) = B.bathymetry[i, j]
 getindex(B::Bathymetry, i) = B.bathymetry[i]
