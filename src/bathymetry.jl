@@ -1,60 +1,14 @@
-"""
-    expcov(dist, σ, ϕ)
-
-Exponential covariance kernel.
-"""
-function expcov(dist, σ, ϕ)
-    σ * exp(-dist / ϕ)
-end
-
-"""
-    mat32(d, σ, ϕ)
-
-Matérn covariance with smoothness parameter ν = 3/2.
-
-```math
-\\Cov(d) = \\sigma^2 \\left(1 + \\frac{\\sqrt{3} d}{\\phi}\\right)
-     \\exp\\left(-\\frac{\\sqrt{3} d}{\\phi}\\right)
-```
-"""
-function mat32(dist, σ², ϕ)
-    σ² * (1 + √3 * dist / ϕ) * exp(-√3 * dist / ϕ)
-end
-
-"""
-    sqexpcov(dist, σ, ϕ)
-
-Squared exponential covariance kernel.
-"""
-function sqexpcov(dist, σ², ϕ)
-    σ² * exp(-dist^2 / 2 / ϕ)
-end
-
-"""
-    BathymetryModel{T<:AbstractMvNormal}
-        D::T
-        locs::Array{Float64, 2}
-        griddim::Vector{Float64}
-
-A multivariate normal with defined R^2 locations for generating
-bathymetry realizations
-"""
 struct BathymetryModel{Td<:AbstractMvNormal, Tω<:AbstractFisheryDomain} <: Any
     D::Td
     Ω::Tω
 end
 ## Might be worth making a type system for spatial kernels...
 function BathymetryModel(Ω::GriddedFisheryDomain{Tf, Ti},
-                         μ::Vector{Tf},
-                         kern::F) where {Tf<:Real, Ti, F<:Function}
+                         μ::AbstractVecOrMat{Tf},
+                         kern::K) where {Tf<:Real, Ti, K<:AbstractCovarianceKernel}
     length(μ) == length(Ω) || throw(DimensionMismatch("Need mean for every grid cell."))
-    D = MvNormal(μ, map_symm(kern, Ω.distances))
+    D = MvNormal(vec(μ), cov(kern, Ω))
     BathymetryModel(D, Ω)
-end
-function BathymetryModel(Ω::GriddedFisheryDomain{Tf, Ti},
-                         μ::Matrix{Tf},
-                         kern::F) where {Tf<:Real, Ti, F<:Function}
-    BathymetryModel(Ω, vec(μ), kern)
 end
 
 """

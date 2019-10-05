@@ -5,6 +5,8 @@ using Distributions
 using StatsBase
 using Test
 using Random
+using PDMats
+using LinearAlgebra
 
 ## Make reproducible
 Random.seed!(1234)
@@ -19,21 +21,32 @@ n = (100, 100)
 include("test-fisherydomain.jl")
 
 ## -----------------------------------------------------------------------------
-## Generate bathymetry
+## Construct covariance kernels and covariance matrices over fishery domains
 σ² = 3.0
 ρ = 40.0
 
+expkern = ExpCov(σ², ρ)
+matkern = Matérn32Cov(σ², ρ)
+
+expΣ = cov(expkern, Ω)
+matΣ = cov(expkern, Ω)
+
+include("test-covkernels.jl")
+
+## -----------------------------------------------------------------------------
+## Generate bathymetry
 μv = zeros(length(Ω))
 μm = zeros(size(Ω)...)
 
-bmod_exp = BathymetryModel(Ω, μv, d -> FisherySim.expcov(d, σ², ρ))
-bathy_exp = rand(bmod_exp)
+bmod_mat = BathymetryModel(Ω, μv, matkern)
+bathy_mat = rand(bmod_mat)
 
 include("test-bathymetry.jl")
 
+
 ## -----------------------------------------------------------------------------
 ## Construct a movement model
-move = MovementModel(bathy_exp, Exponential(10.0), Normal(10.0, 2.0))
+move = MovementModel(bathy_mat, Exponential(10.0), Normal(10.0, 2.0))
 
 eqdist_ap0 = approx_eqdist(move)
 eqdist_ap = approx_eqdist(move, 100.0)
@@ -58,7 +71,7 @@ unispt = StochasticProduction(PellaTomlinson(r, K, 3.39),
                               LogNormal(-0.2^2 / 2, 0.2))
 multispt = StochasticProduction(
     PellaTomlinson(r, K, 3.39),
-    FisherySim.mean1MvLogNormal(bmod_exp.D.Σ))
+    FisherySim.mean1MvLogNormal(matΣ))
 P1_uspt = unispt(P1)
 P1_mspt = multispt(P1)
 
@@ -100,7 +113,6 @@ include("test-vessels.jl")
 ## -----------------------------------------------------------------------------
 ## Fish a population using above definitions
 p1 = PopState(1e-2 * ones(100, 100))
-@show sum(P1)
 Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, 10)
 
 Psums = sum.(Pvec)
@@ -121,4 +133,6 @@ p2 = begin
          rempop = Psums[1] - Csums[1]
          rempop + rempop * r * (1 - rempop / K)
      end
+
+include("test-simulate.jl")
 

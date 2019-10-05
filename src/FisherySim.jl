@@ -10,7 +10,7 @@ using PDMats
 
 import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
 import Rtweedie: Tweedie
-import StatsBase: sample
+import StatsBase: sample, cov
 
 include("fisherydomain.jl")
 export AbstractFisheryDomain,
@@ -22,6 +22,13 @@ export AbstractFisheryDomain,
        ## Don't export:
        ## calculate_distances,
        ## map_symm
+
+include("covkernels.jl")
+export AbstractCovarianceKernel,
+       ExpCov,
+       Matérn32Cov,
+       Matern32Cov,
+       cov
 
 include("bathymetry.jl")
 export BathymetryModel,
