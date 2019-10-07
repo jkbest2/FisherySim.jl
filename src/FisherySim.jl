@@ -28,6 +28,7 @@ export AbstractCovarianceKernel,
        ExpCov,
        Matérn32Cov,
        Matern32Cov,
+       AR1,
        cov
 
 include("bathymetry.jl")

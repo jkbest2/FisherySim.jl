@@ -27,9 +27,11 @@ include("test-fisherydomain.jl")
 
 expkern = ExpCov(σ², ρ)
 matkern = Matérn32Cov(σ², ρ)
+ar1kern = AR1(1.0, 0.5)
 
 expΣ = cov(expkern, Ω)
 matΣ = cov(expkern, Ω)
+ar1Σ = cov(ar1kern, 25)
 
 include("test-covkernels.jl")
 
