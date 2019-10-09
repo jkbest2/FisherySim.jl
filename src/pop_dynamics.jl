@@ -98,9 +98,16 @@ end
 Use `dynmod` population dynamics, and then apply multiplicative noise in the
 resulting population.
 """
-struct StochasticProduction{M<:PopulationDynamicsModel, D<:Distribution} <:PopulationDynamicsModel
+struct StochasticProduction{M<:PopulationDynamicsModel,
+                            D<:Union{Distribution,DomainDistribution}} <:PopulationDynamicsModel
     dynmod::M
     dist::D
+end
+
+function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:DomainDistribution}
+    Pnew = sp.dynmod(P)
+    Pnew.P .= Pnew.P .* rand(sp.dist)
+    Pnew
 end
 
 function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:UnivariateDistribution}
@@ -113,21 +120,5 @@ function (sp::StochasticProduction{M,D})(P::PopState) where {M,D<:MultivariateDi
     Pnew = sp.dynmod(P)
     Pnew.P .= Pnew.P .* reshape(rand(sp.dist), size(Pnew)...)
     Pnew
-end
-
-"""
-    mean1MvLogNormal(Σ::AbstractMatrix)
-
-Construct a multivariate log normal distribution with scale parameter Σ and mean
-a ones vector of appropriate size.
-"""
-function mean1MvLogNormal(Σ::AbstractMatrix)
-    loc = location(MvLogNormal, :mean, ones(size(Σ, 1)), Σ)
-    MvLogNormal(loc, Σ)
-end
-
-function mean1MvLogNormal(Σ::AbstractPDMat)
-    loc = location(MvLogNormal, :mean, ones(size(Σ, 1)), Σ.mat)
-    MvLogNormal(loc, Σ)
 end
 
