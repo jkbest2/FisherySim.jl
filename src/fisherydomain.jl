@@ -17,17 +17,19 @@ struct GriddedFisheryDomain{T<:Real, Ti<:Integer} <: DiscreteFisheryDomain
     n::Tuple{Ti, Ti}
     locs::Array{Tuple{T, T}, 2}
     distances::Array{T, 2}
+    steps::Tuple{T, T}
 
     function GriddedFisheryDomain{T, Ti}(origin::Tuple{T, T},
-                                  antipode::Tuple{T, T},
-                                  n::Tuple{Ti, Ti},
-                                  locs::Array{Tuple{T, T}, 2},
-                                  distances::Array{T, 2}) where {T<:Real, Ti<:Integer}
+                                         antipode::Tuple{T, T},
+                                         n::Tuple{Ti, Ti},
+                                         locs::Array{Tuple{T, T}, 2},
+                                         distances::Array{T, 2},
+                                         steps::Tuple{T, T}) where {T<:Real, Ti<:Integer}
         all(n .== size(locs)) ||
             throw(DimensionMismatch("Locations are wrong dimension."))
         all(prod(n) .== size(distances)) ||
             throw(DimensionMismatch("Distances are wrong dimension."))
-        new(origin, antipode, n, locs, distances)
+        new(origin, antipode, n, locs, distances, steps)
     end
 end
 """
@@ -44,14 +46,14 @@ function GriddedFisheryDomain(origin::Tuple{T, T},
     indices = Base.product(1:n[1], 1:n[2])
     ## Set grid up so that locations are at center of each grid cell
     domain_size = abs.(antipode .- origin)
-    stepsize = domain_size ./ n
-    offset = stepsize ./ 2
+    steps = domain_size ./ n
+    offset = steps ./ 2
     locranges = LinRange.(origin .+ offset, antipode .- offset, n)
     locs = collect(Base.product(locranges...))
 
     distances = calculate_distances(locs)
 
-    GriddedFisheryDomain{T, Tn}(origin, antipode, n, locs, distances)
+    GriddedFisheryDomain{T, Tn}(origin, antipode, n, locs, distances, steps)
 end
 ## Version where `n` is equal along each axis
 function GriddedFisheryDomain(origin::Tuple{T, T},
@@ -66,6 +68,21 @@ end
 
 size(Ω::GriddedFisheryDomain) = Ω.n
 length(Ω::GriddedFisheryDomain) = prod(Ω.n)
+
+# """
+#     getindex(Ω::GriddedFisheryDomain, s1::T, s2::T) where T<:AbstractFloat
+
+# Return the linear index of the grid cell of a gridded fishery domain given
+# "real" coordinates `s1` and `s2`.
+# """
+# function getindex(Ω::GriddedFisheryDomain, s::Tuple{T, T}) where T<:AbstractFloat
+#     idx = @. round(s / Ω.steps - Ω.steps / 2)
+#     to_indices()
+# end
+
+# function getindex(Ω::GriddedFisheryDomain, s1::T, s2::T) where T<:AbstractFloat
+#     getindex(Ω, (s1, s2))
+# end
 
 function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
     N = prod(Ω.n)
@@ -82,7 +99,10 @@ function sample(rng::Random.AbstractRNG,
     N = length(Ω)
     sample(rng, 1:N, w, E; replace = replace)
 end
-function sample(Ω::GriddedFisheryDomain, w::StatsBase.AbstractWeights, E::Integer; replace = true)
+function sample(Ω::GriddedFisheryDomain,
+                w::StatsBase.AbstractWeights,
+                E::Integer;
+                replace = true)
     sample(Random.GLOBAL_RNG, Ω, w, E; replace = replace)
 end
 
