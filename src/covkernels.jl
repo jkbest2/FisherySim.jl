@@ -80,6 +80,16 @@ function cov(K::AbstractCovarianceKernel, Ω::AbstractFisheryDomain)
     PDMat(Symmetric(Σ, :U))
 end
 
+function cov(K::AbstractCovarianceKernel, L::Vector{<:Tuple})
+    n = length(L)
+    Σ = zeros(n, n)
+    @inbounds for jdx in eachindex(L), idx in 1:jdx
+        idx > jdx && continue
+        Σ[idx, jdx] = K(hypot((L[idx] .- L[jdx])...))
+    end
+    PDMat(Symmetric(Σ, :U))
+end
+
 """
     AR1{T}
         σ²::T
