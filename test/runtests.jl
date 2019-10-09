@@ -17,6 +17,7 @@ origin = (0.0, 0.0)
 antipode = (100.0, 100.0)
 n = (100, 100)
 Ω = GriddedFisheryDomain(origin, antipode, n)
+T = 10 # Number of years
 
 include("test-fisherydomain.jl")
 
@@ -30,10 +31,22 @@ matkern = Matérn32Cov(σ², ρ)
 ar1kern = AR1(1.0, 0.5)
 
 expΣ = cov(expkern, Ω)
-matΣ = cov(expkern, Ω)
-ar1Σ = cov(ar1kern, 25)
+matΣ = cov(matkern, Ω)
+ar1Σ = cov(ar1kern, T)
 
 include("test-covkernels.jl")
+
+## -----------------------------------------------------------------------------
+## Define distributions over the domain
+lognorm = DomainDistribution(LogNormal(-0.2^2 / 2, 0.2), Ω)
+mvlognorm = DomainDistribution(MvLogNormal, ones(length(Ω)), matΣ, Ω)
+matlognorm = DomainDistribution(MatrixLogNormal, ones(length(Ω), T), matΣ, ar1Σ, Ω)
+
+ln_real = rand(lognorm)
+mvln_real = rand(mvlognorm)
+matlognorm_real = rand(matlognorm)
+
+include("test-domaindistribution.jl")
 
 ## -----------------------------------------------------------------------------
 ## Generate bathymetry
@@ -73,7 +86,7 @@ unispt = StochasticProduction(PellaTomlinson(r, K, 3.39),
                               LogNormal(-0.2^2 / 2, 0.2))
 multispt = StochasticProduction(
     PellaTomlinson(r, K, 3.39),
-    FisherySim.mean1MvLogNormal(matΣ))
+    mvlognorm)
 P1_uspt = unispt(P1)
 P1_mspt = multispt(P1)
 
@@ -115,7 +128,7 @@ include("test-vessels.jl")
 ## -----------------------------------------------------------------------------
 ## Fish a population using above definitions
 p1 = PopState(1e-2 * ones(100, 100))
-Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, 10)
+Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, T)
 
 Psums = sum.(Pvec)
 

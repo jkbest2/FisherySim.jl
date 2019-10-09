@@ -11,6 +11,7 @@ using PDMats
 import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
 import Rtweedie: Tweedie
 import StatsBase: sample, cov
+import Distributions: location
 
 include("fisherydomain.jl")
 export AbstractFisheryDomain,
@@ -30,6 +31,11 @@ export AbstractCovarianceKernel,
        Matern32Cov,
        AR1,
        cov
+
+include("domaindistributions.jl")
+export DomainDistribution,
+       MatrixLogNormal,
+       location
 
 include("bathymetry.jl")
 export BathymetryModel,
@@ -51,13 +57,18 @@ export PopulationDynamicsModel,
 include("movement.jl")
 export MovementModel, eqdist, approx_eqdist
 
-include("vessels.jl")
+include("targeting.jl")
 export AbstractTargetingBehavior,
        RandomTargeting,
+       FixedTargeting,
        PreferentialTargeting,
-       target,
-       Catchability,
-       Vessel,
+       target
+
+include("catchability.jl")
+export Catchability
+
+include("vessels.jl")
+export Vessel,
        Catch,
        logistic,
        CPUE,
