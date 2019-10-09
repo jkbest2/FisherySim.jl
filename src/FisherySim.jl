@@ -32,10 +32,12 @@ export AbstractCovarianceKernel,
        AR1,
        cov
 
-include("domaindistributions.jl")
-export DomainDistribution,
-       MatrixLogNormal,
+include("matrixlognormal.jl")
+export MatrixLogNormal,
        location
+
+include("domaindistributions.jl")
+export DomainDistribution
 
 include("bathymetry.jl")
 export BathymetryModel,

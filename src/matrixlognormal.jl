@@ -1,24 +1,33 @@
-struct MatrixLogNormal{D<:MatrixNormal}
-    normal::D
-end
+struct MatrixLogNormal{T<:Real,M<:AbstractMatrix,C<:AbstractPDMat} <:
+    Distribution{Matrixvariate,Continuous}
+    normal::MatrixNormal{T, M, C}
 
-function MatrixLogNormal(M::AbstracArray, U::AbstractArray, V::AbstractArray)
-    matnorm = MatrixNormal(M, U, V)
-    MatrixLogNormal(matnorm)
-end
-
-function location(::Type{MatrixLogNormal}, s::Symbol, m::AbstractMatrix, U::AbstractMatrix, V::AbstractMatrix)
-    @assert size(m) == (size(V, 2), size(U, 1))
-    _location!(D, Val{s}, m, U, V, similar(m))
-end
-
-function _location!(::Type{MatrixLogNormal}, ::Type{Val{:mean}}, mn::AbstractMatrix, U::AbstractMatrix, V::AbstractMatrix, μ::AbstractMatrix)
-    II, JJ = size(mn)
-    for jdx in 1:JJ
-        for idx in 1:II
-            μ[idx, jdx] = mn[idx, jdx] - V[idx, idx] * U[jdx, jdx] / 2
-        end
+    function MatrixLogNormal(normal::MatrixNormal{T, M, C}) where {T, M, C}
+        new{T, M, C}(normal)
     end
-    μ
+end
+
+function MatrixLogNormal(M, U, V)
+    MatrixLogNormal(MatrixNormal(M, U, V))
+end
+
+rand(MLN::MatrixLogNormal) = exp.(rand(MLN.normal))
+
+function location(::Type{D}, s::Symbol,
+                  M::AbstractMatrix,
+                  U::AbstractMatrix, V::AbstractMatrix) where {D<:MatrixLogNormal}
+    loc = similar(M)
+    @inbounds for jdx in size(loc, 2)
+        M[:, jdx] .= location(MvLogNormal, s,
+                              M[:, jdx],
+                              diagm(V[jdx, jdx] .* diag(U)))
+    end
+    loc
+end
+
+function location(::Type{D}, s::Symbol,
+                  M::AbstractMatrix,
+                  U::AbstractPDMat, V::AbstractPDMat) where {D<:MatrixLogNormal}
+    location(D, s, M, U.mat, V.mat)
 end
 
