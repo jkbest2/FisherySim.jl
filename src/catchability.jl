@@ -34,9 +34,15 @@ end
 function getindex(Q::Catchability{Tq}, i) where Tq<:Real
     Q.catchability
 end
-function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray
+function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray{<:Any,2}
     Q.catchability[i, j]
 end
-function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray
+function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray{<:Any,2}
     Q.catchability[i]
+end
+function getindex(Q::Catchability{Tq}, i, j, t) where Tq<:AbstractVector{<:AbstractMatrix}
+    Q.catchability[t][i, j]
+end
+function getindex(Q::Catchability{Tq}, i, t) where Tq<:AbstractVector{<:AbstractMatrix}
+    Q.catchability[t][i]
 end
