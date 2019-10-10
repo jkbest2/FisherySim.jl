@@ -1,7 +1,7 @@
 module FisherySim
 
 using Distributions
-using Rtweedie
+using TweedieDistributions
 using StatsBase
 using StatsFuns         # For `logit` and `logistic`; worth it?
 using LinearAlgebra
@@ -9,7 +9,6 @@ using Random
 using PDMats
 
 import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
-import Rtweedie: Tweedie
 import StatsBase: sample, cov
 import Distributions: location
 

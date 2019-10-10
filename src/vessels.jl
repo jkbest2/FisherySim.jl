@@ -25,10 +25,6 @@ struct Vessel{Tt, Tq, Tf}
     end
 end
 
-function Tweedie(μ::Tf, v::Vessel{Ta, Tq, Tf}) where {Ta, Tq, Tf<:Real}
-     Tweedie(μ, v.ξ, v.ϕ)
-end
-
 ## Vector of vessels needs to be abstract type for now; need to figure out small
 ## unions to type more concretely
 struct Fleet{Tv, Te<:Integer}
@@ -88,7 +84,7 @@ function fish!(P::PopState,
     if μ == 0
         catch_biomass = μ
     else
-        catch_biomass = rand(Tweedie(μ, V.ξ, V.ϕ))
+        catch_biomass = rand(CompoundPoissonGamma(μ, V.ξ, V.ϕ))
     end
     if catch_biomass > P.P[target_location]
         catch_biomass = P[target_location]
