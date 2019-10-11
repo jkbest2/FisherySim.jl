@@ -80,7 +80,7 @@ function cov(K::AbstractCovarianceKernel, Ω::AbstractFisheryDomain)
     PDMat(Symmetric(Σ, :U))
 end
 
-function cov(K::AbstractCovarianceKernel, L::Vector{<:Tuple})
+function cov(K::AbstractCovarianceKernel, L::Vector{T}) where {T<:Union{Tuple,Real}}
     n = length(L)
     Σ = zeros(n, n)
     @inbounds for jdx in eachindex(L), idx in 1:jdx
