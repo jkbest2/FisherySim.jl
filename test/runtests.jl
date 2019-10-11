@@ -28,7 +28,7 @@ include("test-fisherydomain.jl")
 
 expkern = ExpCov(σ², ρ)
 matkern = Matérn32Cov(σ², ρ)
-ar1kern = AR1(1.0, 0.5)
+ar1kern = AR1(0.1, 0.5)
 
 expΣ = cov(expkern, Ω)
 matΣ = cov(matkern, Ω)
@@ -95,14 +95,18 @@ include("test-pop_dynamics.jl")
 ## -----------------------------------------------------------------------------
 ## Define vessels and fleets
 target_rand = RandomTargeting()
-target_pref = PreferentialTargeting(l -> 2 * l[1], Ω)
+survey_stations = vec(LinearIndices((100, 100))[5:5:95, 5:5:95])
+target_fixed = FixedTargeting(survey_stations)
+target_pref = PreferentialTargeting(10 .* eqdist_ap.P, Ω)
 
 rand_t = target(Ω, target_rand, 400)
 pref_t = target(Ω, target_pref, 400)
 pref_hist = fit(Histogram, pref_t, closed = :right)
 
-q_const = Catchability(0.2, Ω)
-q_vary = Catchability(l -> 2 * l[2], Ω)
+q_const = Catchability(0.2)
+q_diff = Catchability(lognorm, q_const)
+q_spat = Catchability(mvlognorm, q_const)
+q_sptemp = Catchability(matlognorm, q_const)
 
 ## These have to be fairly high to get many non-zero catches.
 ## These give ~10% zeros. These (especially ϕ?) may be good for testing,
@@ -110,15 +114,15 @@ q_vary = Catchability(l -> 2 * l[2], Ω)
 ξ = 1.9
 ϕ = 1.9
 
-v1 = Vessel(target_rand, q_const, ξ, ϕ)
-v2 = Vessel(target_pref, q_const, ξ, ϕ)
-v3 = Vessel(target_rand, q_vary, ξ, ϕ)
-v4 = Vessel(target_pref, q_vary, ξ, ϕ)
+v1 = Vessel(target_fixed, q_const, ξ, ϕ)
+v2 = Vessel(target_rand, q_diff, ξ, ϕ)
+v3 = Vessel(target_pref, q_spat, ξ, ϕ)
+v4 = Vessel(target_pref, q_sptemp, ξ, ϕ)
 
 P = PopState(ones(size(Ω)...) / length(Ω))
 c1 = fish!(P, v1, Ω)
 
-fleet = Fleet([v1, v2, v3, v4], [100, 100, 100, 100])
+fleet = Fleet([v1, v2, v3, v4], [200, 100, 1000, 1000])
 
 c2 = fish!(P, fleet, Ω)
 total_catch = sum(getfield.(c2, :catch_biomass))
@@ -127,7 +131,7 @@ include("test-vessels.jl")
 
 ## -----------------------------------------------------------------------------
 ## Fish a population using above definitions
-p1 = PopState(1e-2 * ones(100, 100))
+P1 = eqdist_ap
 Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, T)
 
 Psums = sum.(Pvec)

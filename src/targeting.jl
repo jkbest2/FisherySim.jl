@@ -16,6 +16,7 @@ function target(Ω::DiscreteFisheryDomain,
     target(Random.GLOBAL_RNG, Ω, t, E)
 end
 
+## FIXME: Should reimplement these (or at least FixedTargeting) as iterators
 "Vessels target fixed locations in given order."
 struct FixedTargeting{T} <: AbstractTargetingBehavior
     locations::Vector{T}

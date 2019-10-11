@@ -77,20 +77,20 @@ PopState in place. Limited to biomass available in a cell.
 function fish!(P::PopState,
                V::Vessel,
                Ω::AbstractFisheryDomain,
-               t::Integer = 0,
+               t::Integer = 1,
                vessel_idx = 0)
-    target_location = target(Ω, V.target)[1]
-    μ = P.P[target_location] * V.catchability[target_location]
+    target_location = (l = target(Ω, V.target)[1], t = t)
+    μ = P.P[target_location.l] * V.catchability[target_location]
     if μ == 0
         catch_biomass = μ
     else
         catch_biomass = rand(CompoundPoissonGamma(μ, V.ξ, V.ϕ))
     end
-    if catch_biomass > P.P[target_location]
-        catch_biomass = P[target_location]
+    if catch_biomass > P.P[target_location.l]
+        catch_biomass = P[target_location.l]
     end
-    setindex!(P, P[target_location] - catch_biomass, target_location)
-    C = Catch(t, vessel_idx, target_location, Ω.locs[target_location],
+    setindex!(P, P[target_location.l] - catch_biomass, target_location.l)
+    C = Catch(t, vessel_idx, target_location.l, Ω.locs[target_location.l],
               convert(typeof(catch_biomass), 1), catch_biomass)
 end
 
@@ -103,7 +103,7 @@ Vessels harvest in random order and cells are sequentially depleted.
 function fish!(P::PopState{Tf},
                F::Fleet,
                Ω::AbstractFisheryDomain,
-               t::Ti = 0) where {Tf<:Real, Ti<:Integer}
+               t::Ti = 1) where {Tf<:Real, Ti<:Integer}
     effort_vec = reduce(vcat, [repeat([vessel_idx], inner = [tot_eff]) for
                                (vessel_idx, tot_eff) in enumerate(F.total_effort)])
     catch_record = Vector{Catch{Tf, Ti}}()
