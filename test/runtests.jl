@@ -15,7 +15,7 @@ Random.seed!(1234)
 ## Construct a GriddedFisheryDomain
 origin = (0.0, 0.0)
 antipode = (100.0, 100.0)
-n = (100, 100)
+n = (50, 50)
 Ω = GriddedFisheryDomain(origin, antipode, n)
 T = 10 # Number of years
 
