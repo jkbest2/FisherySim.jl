@@ -22,27 +22,62 @@ function Catchability(q::A, Ω::DiscreteFisheryDomain) where A <: AbstractArray
         throw(DimensionMismatch("Catchability array and domain dimensions must match."))
     Catchability(q)
 end
-function Catchability(f::F, Ω::DiscreteFisheryDomain) where F <: Function
+
+function Catchability(f::Function, Ω::DiscreteFisheryDomain)
     q = [f(loc) for loc in Ω.locs]
     Catchability(q, Ω)
 end
 
+"""
+    Catchability(DD::DomainDistribution)
 
-function getindex(Q::Catchability{Tq}, i, j) where Tq<:Real
+Construct a `Catchability` object as a random draw from a `DomainDistribution`.
+"""
+function Catchability(DD::DomainDistribution)
+    Catchability(rand(DD))
+end
+
+"""
+    Catchability(DD::DomainDistribution, C::Catchability)
+
+Construct a `Catchability` using the spatially constant catchability from `C`
+with multiplicative error based on a random draw from a `DomainDistribution`.
+"""
+function Catchability(DD::DomainDistribution, C::Catchability{<:Real})
+    q = C.catchability .* rand(DD)
+    Catchability(q)
+end
+
+function getindex(Q::Catchability{Tq} where Tq<:Real,
+                  loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
     Q.catchability
 end
-function getindex(Q::Catchability{Tq}, i) where Tq<:Real
-    Q.catchability
+
+function getindex(Q::Catchability{Tq} where Tq<:AbstractMatrix,
+                  loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
+    Q.catchability[loc.l]
 end
-function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray{<:Any,2}
-    Q.catchability[i, j]
+
+function getindex(Q::Catchability{Tq} where Tq<:AbstractVector{<:AbstractMatrix},
+                  loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
+    Q.catchability[loc.t][loc.l]
 end
-function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray{<:Any,2}
-    Q.catchability[i]
-end
-function getindex(Q::Catchability{Tq}, i, j, t) where Tq<:AbstractVector{<:AbstractMatrix}
-    Q.catchability[t][i, j]
-end
-function getindex(Q::Catchability{Tq}, i, t) where Tq<:AbstractVector{<:AbstractMatrix}
-    Q.catchability[t][i]
-end
+
+# function getindex(Q::Catchability{Tq}, i, j) where Tq<:Real
+#     Q.catchability
+# end
+# function getindex(Q::Catchability{Tq}, i) where Tq<:Real
+#     Q.catchability
+# end
+# function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray{<:Any,2}
+#     Q.catchability[i, j]
+# end
+# function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray{<:Any,2}
+#     Q.catchability[i]
+# end
+# function getindex(Q::Catchability{Tq}, i, j, t) where Tq<:AbstractVector{<:AbstractMatrix}
+#     Q.catchability[t][i, j]
+# end
+# function getindex(Q::Catchability{Tq}, i, t) where Tq<:AbstractVector{<:AbstractMatrix}
+#     Q.catchability[t][i]
+# end
