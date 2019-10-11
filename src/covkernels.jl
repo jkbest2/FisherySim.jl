@@ -73,7 +73,7 @@ end
 
 function cov(K::AbstractCovarianceKernel, Ω::AbstractFisheryDomain)
     Σ = zeros(length(Ω), length(Ω))
-    @inbounds for jdx in eachindex(Ω.locs), idx in eachindex(Ω.locs)
+    @inbounds for jdx in eachindex(Ω), idx in eachindex(Ω)
         idx > jdx && continue
         Σ[idx, jdx] = K(Ω.distances[idx, jdx])
     end

@@ -8,7 +8,13 @@ using LinearAlgebra
 using Random
 using PDMats
 
-import Base: rand, +, -, step, sum, getindex, setindex!, size, length, copy
+import Base: rand,
+    +, -,
+    step,
+    sum,
+    getindex, setindex!,
+    size, length, eachindex,
+    copy
 import StatsBase: sample, cov
 import Distributions: location
 
@@ -18,6 +24,7 @@ export AbstractFisheryDomain,
        GriddedFisheryDomain,
        size,
        length,
+       eachindex,
        sample
        ## Don't export:
        ## calculate_distances,

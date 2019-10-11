@@ -68,6 +68,7 @@ end
 
 size(Ω::GriddedFisheryDomain) = Ω.n
 length(Ω::GriddedFisheryDomain) = prod(Ω.n)
+eachindex(Ω::GriddedFisheryDomain) = eachindex(Ω.locs)
 
 # """
 #     getindex(Ω::GriddedFisheryDomain, s1::T, s2::T) where T<:AbstractFloat
