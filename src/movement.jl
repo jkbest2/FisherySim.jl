@@ -9,7 +9,22 @@ struct MovementModel{T<:Real, Ti<:Integer}
     Ωsize::Tuple{Ti, Ti}
 end
 
-function MovementModel(B::Bathymetry, distance::Distributions.UnivariateDistribution)
+function MovementModel(domain::AbstractFisheryDomain,
+                       habitat::AbstractMatrix,
+                       pref_fn::Function,
+                       dist_fn::Function)
+    mvt_n = prod(domain.n)
+    mvt = Matrix{eltype(habitat)}(undef, mvt_n, mvt_n)
+    for jdx in 1:mvt_n, idx in 1:mvt_n
+        mvt[idx, jdx] = pref_fn(habitat[idx]) *
+            dist_fn(domain.distances[idx, jdx])
+    end
+    mvt ./= sum(mvt; dims = 1)
+    MovementModel(mvt, domain.n)
+end
+
+function MovementModel(B::Bathymetry,
+                       distance::Distributions.UnivariateDistribution)
     mvt = pdf.(dist, B.Ω.distances)
     mvt ./= sum(mvt, 2)
     MovementModel(Matrix(mvt'), size(B.Ω))
@@ -37,7 +52,7 @@ Find the equilibrium distribution under a given movement model.
 """
 function eqdist(M::MovementModel)
     n = M.Ωsize
-    eq = real(eigvecs(M.M)[:, 1])
+    eq = real(eigvecs(M.M)[:, end])
     eq ./= sum(eq)
     PopState(reshape(eq, n...))
 end
