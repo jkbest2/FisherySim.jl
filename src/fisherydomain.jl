@@ -68,21 +68,22 @@ end
 
 size(Ω::GriddedFisheryDomain) = Ω.n
 length(Ω::GriddedFisheryDomain) = prod(Ω.n)
+eachindex(Ω::GriddedFisheryDomain) = eachindex(Ω.locs)
 
-# """
-#     getindex(Ω::GriddedFisheryDomain, s1::T, s2::T) where T<:AbstractFloat
+"""
+    getindex(Ω::GriddedFisheryDomain, idx::Integer)
+    getindex(Ω::GriddedFisheryDomain, idx::Integer, jdx::Integer)
 
-# Return the linear index of the grid cell of a gridded fishery domain given
-# "real" coordinates `s1` and `s2`.
-# """
-# function getindex(Ω::GriddedFisheryDomain, s::Tuple{T, T}) where T<:AbstractFloat
-#     idx = @. round(s / Ω.steps - Ω.steps / 2)
-#     to_indices()
-# end
+Return the coordinates of the center of the `idx` cell, linearly indexed, or the
+(idx, jdx) cell in Cartesian indices.
+ """
+function getindex(Ω::GriddedFisheryDomain, idx::Integer)
+    getindex(Ω.locs, idx)
+end
 
-# function getindex(Ω::GriddedFisheryDomain, s1::T, s2::T) where T<:AbstractFloat
-#     getindex(Ω, (s1, s2))
-# end
+function getindex(Ω::GriddedFisheryDomain, idx::Integer, jdx::Integer)
+    getindex(Ω, LinearIndices(Ω.n)[idx, jdx])
+end
 
 function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
     N = prod(Ω.n)

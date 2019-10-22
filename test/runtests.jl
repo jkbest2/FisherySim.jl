@@ -1,6 +1,5 @@
 # Load required package
 using FisherySim
-using Distances
 using Distributions
 using StatsBase
 using Test
@@ -15,7 +14,7 @@ Random.seed!(1234)
 ## Construct a GriddedFisheryDomain
 origin = (0.0, 0.0)
 antipode = (100.0, 100.0)
-n = (100, 100)
+n = (50, 50)
 Ω = GriddedFisheryDomain(origin, antipode, n)
 T = 10 # Number of years
 
@@ -28,7 +27,7 @@ include("test-fisherydomain.jl")
 
 expkern = ExpCov(σ², ρ)
 matkern = Matérn32Cov(σ², ρ)
-ar1kern = AR1(1.0, 0.5)
+ar1kern = AR1(0.1, 0.5)
 
 expΣ = cov(expkern, Ω)
 matΣ = cov(matkern, Ω)
@@ -40,18 +39,24 @@ include("test-covkernels.jl")
 ## Define distributions over the domain
 lognorm = DomainDistribution(LogNormal(-0.2^2 / 2, 0.2), Ω)
 mvlognorm = DomainDistribution(MvLogNormal, ones(length(Ω)), matΣ, Ω)
-matlognorm = DomainDistribution(MatrixLogNormal, ones(length(Ω), T), matΣ, ar1Σ, Ω)
+# matlognorm = DomainDistribution(MatrixLogNormal, 0.2ones(length(Ω), T), matΣ, ar1Σ, Ω)
 
 ln_real = rand(lognorm)
 mvln_real = rand(mvlognorm)
-matlognorm_real = rand(matlognorm)
+# matlognorm_real = rand(matlognorm)
 
 include("test-domaindistribution.jl")
 
 ## -----------------------------------------------------------------------------
 ## Generate bathymetry
 μv = zeros(length(Ω))
-μm = zeros(size(Ω)...)
+# μm = zeros(size(Ω)...)
+for idx in eachindex(Ω)
+    μv[idx] = 2e-1first(Ω[idx]) + 1
+end
+
+hab_model = DomainDistribution(MvLogNormal, μv, matΣ, Ω)
+hab = rand(hab_model)
 
 bmod_mat = BathymetryModel(Ω, μv, matkern)
 bathy_mat = rand(bmod_mat)
@@ -95,14 +100,18 @@ include("test-pop_dynamics.jl")
 ## -----------------------------------------------------------------------------
 ## Define vessels and fleets
 target_rand = RandomTargeting()
-target_pref = PreferentialTargeting(l -> 2 * l[1], Ω)
+survey_stations = vec(LinearIndices((100, 100))[5:5:95, 5:5:95])
+target_fixed = FixedTargeting(survey_stations)
+target_pref = PreferentialTargeting(10 .* eqdist_ap.P, Ω)
 
 rand_t = target(Ω, target_rand, 400)
 pref_t = target(Ω, target_pref, 400)
 pref_hist = fit(Histogram, pref_t, closed = :right)
 
-q_const = Catchability(0.2, Ω)
-q_vary = Catchability(l -> 2 * l[2], Ω)
+q_const = Catchability(0.2)
+q_diff = Catchability(lognorm, q_const)
+q_spat = Catchability(mvlognorm, q_const)
+# q_sptemp = Catchability(matlognorm, q_const)
 
 ## These have to be fairly high to get many non-zero catches.
 ## These give ~10% zeros. These (especially ϕ?) may be good for testing,
@@ -110,15 +119,15 @@ q_vary = Catchability(l -> 2 * l[2], Ω)
 ξ = 1.9
 ϕ = 1.9
 
-v1 = Vessel(target_rand, q_const, ξ, ϕ)
-v2 = Vessel(target_pref, q_const, ξ, ϕ)
-v3 = Vessel(target_rand, q_vary, ξ, ϕ)
-v4 = Vessel(target_pref, q_vary, ξ, ϕ)
+v1 = Vessel(target_fixed, q_const, ξ, ϕ)
+v2 = Vessel(target_rand, q_diff, ξ, ϕ)
+v3 = Vessel(target_pref, q_spat, ξ, ϕ)
+v4 = Vessel(target_pref, q_spat, ξ, ϕ)
 
 P = PopState(ones(size(Ω)...) / length(Ω))
 c1 = fish!(P, v1, Ω)
 
-fleet = Fleet([v1, v2, v3, v4], [100, 100, 100, 100])
+fleet = Fleet([v1, v2, v3, v4], [200, 100, 1000, 1000])
 
 c2 = fish!(P, fleet, Ω)
 total_catch = sum(getfield.(c2, :catch_biomass))
@@ -127,7 +136,7 @@ include("test-vessels.jl")
 
 ## -----------------------------------------------------------------------------
 ## Fish a population using above definitions
-p1 = PopState(1e-2 * ones(100, 100))
+P1 = eqdist_ap
 Pvec, Cvec = simulate(P1, fleet, move, schaef, Ω, T)
 
 Psums = sum.(Pvec)
