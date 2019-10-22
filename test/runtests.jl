@@ -122,7 +122,7 @@ q_spat = Catchability(mvlognorm, q_const)
 v1 = Vessel(target_fixed, q_const, ξ, ϕ)
 v2 = Vessel(target_rand, q_diff, ξ, ϕ)
 v3 = Vessel(target_pref, q_spat, ξ, ϕ)
-v4 = Vessel(target_pref, q_sptemp, ξ, ϕ)
+v4 = Vessel(target_pref, q_spat, ξ, ϕ)
 
 P = PopState(ones(size(Ω)...) / length(Ω))
 c1 = fish!(P, v1, Ω)

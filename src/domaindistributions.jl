@@ -31,15 +31,15 @@ function DomainDistribution(t::Type{<:Distributions.AbstractMvLogNormal},
     DomainDistribution(MvLogNormal(loc, Σ), domain)
 end
 
-function DomainDistribution(t::Type{D},
-                            μ::AbstractMatrix,
-                            U::AbstractPDMat, V::AbstractPDMat,
-                            domain::AbstractFisheryDomain,
-                            s::Symbol = :mean) where {D<:MatrixLogNormal}
-    loc = location(D, s, μ, U, V)
-    normal = MatrixNormal(loc, U, V)
-    DomainDistribution(t(normal), domain)
-end
+# function DomainDistribution(t::Type{D},
+#                             μ::AbstractMatrix,
+#                             U::AbstractPDMat, V::AbstractPDMat,
+#                             domain::AbstractFisheryDomain,
+#                             s::Symbol = :mean) where {D<:MatrixLogNormal}
+#     loc = location(D, s, μ, U, V)
+#     normal = MatrixNormal(loc, U, V)
+#     DomainDistribution(t(normal), domain)
+# end
 
 function rand(DD::DomainDistribution{D, O}) where {D<:UnivariateDistribution, O}
     rand(DD.dist, size(DD.domain)...)
@@ -55,5 +55,3 @@ function rand(DD::DomainDistribution{D, O}) where {D<:MatrixDistribution, O}
     [reshape(x, size(DD.domain)) for x in eachcol(xs)]
     # reshape(xs, size(DD.domain)..., size(xs, 2))
 end
-
-

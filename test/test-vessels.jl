@@ -9,7 +9,7 @@
     # @test q_const[1, 1] == 0.2
     # @test q_const[5, 15] == 0.2
     @test q_spat[(l = 500, t = 100)] > 0
-    @test q_sptemp[(l = 400, t = 1)] > 0
+    # @test q_sptemp[(l = 400, t = 1)] > 0
     # @test q_vary[35] == 1.0
 
     @test c1 isa Catch
