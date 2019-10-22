@@ -1,6 +1,5 @@
 # Load required package
 using FisherySim
-using Distances
 using Distributions
 using StatsBase
 using Test
@@ -40,18 +39,24 @@ include("test-covkernels.jl")
 ## Define distributions over the domain
 lognorm = DomainDistribution(LogNormal(-0.2^2 / 2, 0.2), Ω)
 mvlognorm = DomainDistribution(MvLogNormal, ones(length(Ω)), matΣ, Ω)
-matlognorm = DomainDistribution(MatrixLogNormal, ones(length(Ω), T), matΣ, ar1Σ, Ω)
+# matlognorm = DomainDistribution(MatrixLogNormal, 0.2ones(length(Ω), T), matΣ, ar1Σ, Ω)
 
 ln_real = rand(lognorm)
 mvln_real = rand(mvlognorm)
-matlognorm_real = rand(matlognorm)
+# matlognorm_real = rand(matlognorm)
 
 include("test-domaindistribution.jl")
 
 ## -----------------------------------------------------------------------------
 ## Generate bathymetry
 μv = zeros(length(Ω))
-μm = zeros(size(Ω)...)
+# μm = zeros(size(Ω)...)
+for idx in eachindex(Ω)
+    μv[idx] = 2e-1first(Ω[idx]) + 1
+end
+
+hab_model = DomainDistribution(MvLogNormal, μv, matΣ, Ω)
+hab = rand(hab_model)
 
 bmod_mat = BathymetryModel(Ω, μv, matkern)
 bathy_mat = rand(bmod_mat)
@@ -106,7 +111,7 @@ pref_hist = fit(Histogram, pref_t, closed = :right)
 q_const = Catchability(0.2)
 q_diff = Catchability(lognorm, q_const)
 q_spat = Catchability(mvlognorm, q_const)
-q_sptemp = Catchability(matlognorm, q_const)
+# q_sptemp = Catchability(matlognorm, q_const)
 
 ## These have to be fairly high to get many non-zero catches.
 ## These give ~10% zeros. These (especially ϕ?) may be good for testing,

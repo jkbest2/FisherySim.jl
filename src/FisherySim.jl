@@ -40,10 +40,10 @@ export
     AR1,
     cov
 
-include("matrixlognormal.jl")
-export
-    MatrixLogNormal,
-    location
+# include("matrixlognormal.jl")
+# export
+#     MatrixLogNormal,
+#     location
 
 include("domaindistributions.jl")
 export
