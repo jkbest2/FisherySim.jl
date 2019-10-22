@@ -22,7 +22,7 @@ include("test-fisherydomain.jl")
 
 ## -----------------------------------------------------------------------------
 ## Construct covariance kernels and covariance matrices over fishery domains
-σ² = 3.0
+σ² = 5.0
 ρ = 40.0
 
 expkern = ExpCov(σ², ρ)
@@ -52,21 +52,25 @@ include("test-domaindistribution.jl")
 μv = zeros(length(Ω))
 # μm = zeros(size(Ω)...)
 for idx in eachindex(Ω)
-    μv[idx] = 2e-1first(Ω[idx]) + 1
+    μv[idx] = -1 / 2500 * first(Ω[idx]) * (first(Ω[idx]) - 100)
 end
 
-hab_model = DomainDistribution(MvLogNormal, μv, matΣ, Ω)
+# hab_model = DomainDistribution(MvLogNormal, μv, matΣ, Ω)
+hab_model = DomainDistribution(MvNormal(μv, matΣ), Ω)
 hab = rand(hab_model)
 
-bmod_mat = BathymetryModel(Ω, μv, matkern)
-bathy_mat = rand(bmod_mat)
+# bmod_mat = BathymetryModel(Ω, μv, matkern)
+# bathy_mat = rand(bmod_mat)
 
-include("test-bathymetry.jl")
+# include("test-bathymetry.jl")
 
 
 ## -----------------------------------------------------------------------------
 ## Construct a movement model
-move = MovementModel(bathy_mat, Exponential(10.0), Normal(10.0, 2.0))
+# move = MovementModel(bathy_mat, Exponential(10.0), Normal(10.0, 2.0))
+hab_pref(h) = exp(-h^2 / 2)
+dist_kern(d) = exp(-d / 2)
+move = MovementModel(Ω, hab, hab_pref, dist_kern)
 
 eqdist_ap0 = approx_eqdist(move)
 eqdist_ap = approx_eqdist(move, 100.0)
