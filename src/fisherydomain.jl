@@ -85,13 +85,35 @@ function getindex(Ω::GriddedFisheryDomain, idx::Integer, jdx::Integer)
     getindex(Ω, LinearIndices(Ω.n)[idx, jdx])
 end
 
-function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
-    N = prod(Ω.n)
-    sample(rng, 1:N, E; replace = replace)
+# Randomly sample locations from domain
+function sample(rng, Ω::GriddedFisheryDomain)
+    sample(rng, 1:length(Ω))
 end
+
+function sample(Ω::GriddedFisheryDomain)
+    sample(Random.GLOBAL_RNG, Ω)
+end
+
+function sample(rng, Ω::GriddedFisheryDomain, E::Integer; replace = true)
+    sample(rng, 1:length(Ω), E; replace = replace)
+end
+
 function sample(Ω::GriddedFisheryDomain, E::Integer; replace = true)
     sample(Random.GLOBAL_RNG, Ω, E; replace = replace)
 end
+
+# Weighted sampling from domain
+function sample(rng::Random.AbstractRNG,
+                Ω::GriddedFisheryDomain,
+                w::StatsBase.AbstractWeights)
+    sample(rng, 1:length(Ω), w)
+end
+
+function sample(Ω::GriddedFisheryDomain,
+                w::StatsBase.AbstractWeights)
+    sample(Random.GLOBAL_RNG, Ω, w)
+end
+
 function sample(rng::Random.AbstractRNG,
                 Ω::GriddedFisheryDomain,
                 w::StatsBase.AbstractWeights,
@@ -100,6 +122,7 @@ function sample(rng::Random.AbstractRNG,
     N = length(Ω)
     sample(rng, 1:N, w, E; replace = replace)
 end
+
 function sample(Ω::GriddedFisheryDomain,
                 w::StatsBase.AbstractWeights,
                 E::Integer;
