@@ -4,47 +4,54 @@ abstract type AbstractTargetingBehavior <: Any end
 struct RandomTargeting <: AbstractTargetingBehavior end
 
 function target(rng::Random.AbstractRNG,
-                Ω::DiscreteFisheryDomain,
                 t::RandomTargeting,
-                E::Integer = 1)
-    sample(rng, Ω, E; replace = true)
+                Ω::DiscreteFisheryDomain)
+    sample(rng, Ω)
 end
 
-function target(Ω::DiscreteFisheryDomain,
-                t::RandomTargeting,
-                E::Integer = 1)
-    target(Random.GLOBAL_RNG, Ω, t, E)
+function target(t::RandomTargeting,
+                Ω::DiscreteFisheryDomain)
+    target(Random.GLOBAL_RNG, t, Ω)
 end
 
 ## FIXME: Should reimplement these (or at least FixedTargeting) as iterators
-"Vessels target fixed locations in given order."
-struct FixedTargeting{T} <: AbstractTargetingBehavior
+"""
+Vessels target fixed locations in given order. This struct is mutable and has
+state to track which survey station is next. State can be reset using the
+`reset!` function.
+"""
+mutable struct FixedTargeting{T} <: AbstractTargetingBehavior
     locations::Vector{T}
-    ordered::Bool
+    state::T
 
-    FixedTargeting(locs::Vector{T}) where T<:Integer = new{T}(locs, true)
+    FixedTargeting(locs::Vector{T}) where T<:Integer = new{T}(locs, one(T))
 end
 
-function target(domain::AbstractFisheryDomain,
-                t::FixedTargeting,
-                E::Integer)
-    E == length(t.locations) ||
-        throw("Effort must equal number of fixed target locations.")
-    t.locations
-end
-
-function target(domain::AbstractFisheryDomain,
-                t::FixedTargeting)
-    target(domain, t, length(t.locations))
+function target(t::FixedTargeting,
+                domain::AbstractFisheryDomain)
+    loc = t.locations[t.state]
+    t.state += 1
+    loc
 end
 
 ## RNG is ignored, but allowed for compatibility with other targeting behaviors.
 function target(rng::Random.AbstractRNG,
-                domain::AbstractFisheryDomain,
                 t::FixedTargeting,
-                E::Integer)
-    target(domain, t, length(t.locations))
+                domain::AbstractFisheryDomain)
+    target(t, domain)
 end
+
+length(t::FixedTargeting) = length(t.locations)
+
+"""
+    reset!(FT::FixedTargeting{T}) where T
+    reset!(Targeting::AbstractTargetingBehavior)
+
+For `FixedTargeting` objects, resets `state` to one in place. For other
+targeting types, does (and returns) nothing.
+"""
+reset!(FT::FixedTargeting{T}) where T = FT.state = one(T)
+reset!(Targeting::AbstractTargetingBehavior) = nothing
 
 """
 Vessels target according to some function or vector of preferences.
@@ -56,26 +63,29 @@ location and returns a preference weight.
 """
 struct PreferentialTargeting{T} <: AbstractTargetingBehavior
     preference::T
+
+    PreferentialTargeting(preference::W) where W<:Weights = new{W}(preference)
 end
+
+## Outer constructor fallback to construct Weights object for the inner constructor
+PreferentialTargeting(preference) = PreferentialTargeting(weights(preference))
+
 function PreferentialTargeting(pref::Tp, Ω::DiscreteFisheryDomain) where {Tp <: AbstractArray}
     all(size(pref) .== size(Ω)) ||
         throw(DimensionMismatch("Preference array and domain dimensions must match."))
-    PreferentialTargeting(pref)
+    PreferentialTargeting(weights(pref))
 end
 function PreferentialTargeting(f::Function, Ω::DiscreteFisheryDomain)
-    ## Quick @btime showed comprehension ~1/2 the time as `map`
-    pref = [f(loc) for loc in Ω.locs]
-    PreferentialTargeting(pref)
+    pref = f.(Ω.locs)
+    PreferentialTargeting(weights(pref))
 end
 
 function target(rng::Random.AbstractRNG,
-                Ω::DiscreteFisheryDomain,
-                t::PreferentialTargeting{T},
-                E::Integer = 1) where T <: AbstractArray
-    sample(rng, Ω, Weights(vec(t.preference)), E; replace = true)
+                t::PreferentialTargeting,
+                Ω::DiscreteFisheryDomain)
+    sample(rng, Ω, t.preference)
 end
-function target(Ω::DiscreteFisheryDomain,
-                t::PreferentialTargeting{T},
-                E::Integer = 1) where T <: AbstractArray
-    target(Random.GLOBAL_RNG, Ω, t, E)
+function target(t::PreferentialTargeting,
+                Ω::DiscreteFisheryDomain)
+    target(Random.GLOBAL_RNG, t, Ω)
 end

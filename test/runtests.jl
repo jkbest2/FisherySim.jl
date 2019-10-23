@@ -63,7 +63,6 @@ bathy_mat = rand(bmod_mat)
 
 include("test-bathymetry.jl")
 
-
 ## -----------------------------------------------------------------------------
 ## Construct a movement model
 move = MovementModel(bathy_mat, Exponential(10.0), Normal(10.0, 2.0))
@@ -100,13 +99,16 @@ include("test-pop_dynamics.jl")
 ## -----------------------------------------------------------------------------
 ## Define vessels and fleets
 target_rand = RandomTargeting()
-survey_stations = vec(LinearIndices((100, 100))[5:5:95, 5:5:95])
+survey_stations = vec(LinearIndices(n)[2:2:48, 2:8:48])
 target_fixed = FixedTargeting(survey_stations)
 target_pref = PreferentialTargeting(10 .* eqdist_ap.P, Ω)
 
-rand_t = target(Ω, target_rand, 400)
-pref_t = target(Ω, target_pref, 400)
-pref_hist = fit(Histogram, pref_t, closed = :right)
+fixed_t = target(target_fixed, Ω)
+reset!(target_fixed)
+rand_t = target(target_rand, Ω)
+reset!(target_rand)
+pref_t = target(target_pref, Ω)
+reset!(target_pref)
 
 q_const = Catchability(0.2)
 q_diff = Catchability(lognorm, q_const)
@@ -126,8 +128,9 @@ v4 = Vessel(target_pref, q_spat, ξ, ϕ)
 
 P = PopState(ones(size(Ω)...) / length(Ω))
 c1 = fish!(P, v1, Ω)
+reset!(v1.target)
 
-fleet = Fleet([v1, v2, v3, v4], [200, 100, 1000, 1000])
+fleet = Fleet([v1, v2, v3, v4], [length(v1.target), 100, 1000, 1000])
 
 c2 = fish!(P, fleet, Ω)
 total_catch = sum(getfield.(c2, :catch_biomass))

@@ -80,7 +80,8 @@ export
     RandomTargeting,
     FixedTargeting,
     PreferentialTargeting,
-    target
+    target,
+    reset!
 
 include("catchability.jl")
 export

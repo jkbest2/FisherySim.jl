@@ -79,7 +79,7 @@ function fish!(P::PopState,
                Ω::AbstractFisheryDomain,
                t::Integer = 1,
                vessel_idx = 0)
-    target_location = (l = target(Ω, V.target)[1], t = t)
+    target_location = (l = target(V.target, Ω), t = t)
     μ = P.P[target_location.l] * V.catchability[target_location]
     if μ == 0
         catch_biomass = μ
@@ -111,6 +111,11 @@ function fish!(P::PopState{Tf},
     for idx in effort_vec
         c = fish!(P, F[idx], Ω, t, idx)
         push!(catch_record, c)
+    end
+    # FIXME need a better way to deal with resetting stateful targeting each
+    # year and dealing with changing targeting over time
+    for vessel in vessels(F)
+        reset!(vessel.target)
     end
     catch_record
 end
