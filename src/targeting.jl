@@ -52,6 +52,9 @@ targeting types, does (and returns) nothing.
 """
 reset!(FT::FixedTargeting{T}) where T = FT.state = one(T)
 reset!(Targeting::AbstractTargetingBehavior) = nothing
+reset!(target::AbstractTargetingBehavior, pop::PopState) = reset!(target)
+
+abstract type AbstractPreferentialTargeting <: AbstractTargetingBehavior end
 
 """
 Vessels target according to some function or vector of preferences.
@@ -61,7 +64,7 @@ to one) the same dimensions as the DiscreteFisheryDomain, or a function that
 accepts a single argument (typically a Tuple or Array with two elements) of a
 location and returns a preference weight.
 """
-struct PreferentialTargeting{T} <: AbstractTargetingBehavior
+struct PreferentialTargeting{T} <: AbstractPreferentialTargeting
     preference::T
 
     PreferentialTargeting(preference::W) where W<:Weights = new{W}(preference)
@@ -81,11 +84,32 @@ function PreferentialTargeting(f::Function, Ω::DiscreteFisheryDomain)
 end
 
 function target(rng::Random.AbstractRNG,
-                t::PreferentialTargeting,
+                t::AbstractPreferentialTargeting,
                 Ω::DiscreteFisheryDomain)
     sample(rng, Ω, t.preference)
 end
-function target(t::PreferentialTargeting,
+function target(t::AbstractPreferentialTargeting,
                 Ω::DiscreteFisheryDomain)
     target(Random.GLOBAL_RNG, t, Ω)
 end
+
+
+mutable struct DynamicPreferentialTargeting{W, F} <: AbstractPreferentialTargeting
+    preference::W
+    pref_fn::F
+
+    function DynamicPreferentialTargeting(preference::W, pref_fn::F) where
+        {W<:Weights, F<:Function}
+        new{W, F}(preference, pref_fn)
+    end
+end
+
+function DynamicPreferentialTargeting(preference::AbstractArray,
+                                      pref_fn::Function)
+    DynamicPreferentialTargeting(weights(preference), pref_fn)
+end
+
+function reset!(dynpref::DynamicPreferentialTargeting, pop::PopState)
+    dynpref.preference = weights(dynpref.pref_fn.(pop.P))
+end
+

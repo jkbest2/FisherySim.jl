@@ -115,7 +115,7 @@ function fish!(P::PopState{Tf},
     # FIXME need a better way to deal with resetting stateful targeting each
     # year and dealing with changing targeting over time
     for vessel in vessels(F)
-        reset!(vessel.target)
+        reset!(vessel.target, P)
     end
     catch_record
 end
