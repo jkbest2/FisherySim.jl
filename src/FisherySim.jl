@@ -79,7 +79,9 @@ export
     AbstractTargetingBehavior,
     RandomTargeting,
     FixedTargeting,
+    AbstractPreferentialTargeting,
     PreferentialTargeting,
+    DynamicPreferentialTargeting,
     target,
     reset!
 
