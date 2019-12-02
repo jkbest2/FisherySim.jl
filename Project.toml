@@ -1,7 +1,7 @@
 name = "FisherySim"
 uuid = "c2a90378-fa76-5799-9c4c-bbfd1330d11a"
 author = ["John Best <jkbest@gmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
