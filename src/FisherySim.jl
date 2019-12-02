@@ -6,6 +6,7 @@ using StatsBase
 using LinearAlgebra
 using Random
 using PDMats
+using Arpack
 
 import Base:
     rand,
@@ -71,8 +72,7 @@ export
 include("movement.jl")
 export
     MovementModel,
-    eqdist,
-    approx_eqdist
+    eqdist
 
 include("targeting.jl")
 export

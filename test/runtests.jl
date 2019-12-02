@@ -71,8 +71,8 @@ hab_pref(h) = exp(-h^2 / 2)
 dist_kern(d) = exp(-d / 2)
 move = MovementModel(Ω, hab, hab_pref, dist_kern)
 
-eqdist_ap0 = approx_eqdist(move)
-eqdist_ap = approx_eqdist(move, 100.0)
+eqdist_ap0 = eqdist(move)
+eqdist_ap = eqdist(move, 100.0)
 
 include("test-movement.jl")
 
