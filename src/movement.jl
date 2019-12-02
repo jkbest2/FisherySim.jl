@@ -48,11 +48,15 @@ end
 """
     eqdist(M::MovementModel)
 
-Find the equilibrium distribution under a given movement model.
+Find the equilibrium distribution under a given movement model. Uses Arpack.jl
+to find the eigenvector associated with the largest eigenvalue (which will be
+one due to the row-standardization of the movement operator).
 """
 function eqdist(M::MovementModel)
     n = M.Ωsize
-    eq = real(eigvecs(M.M)[:, end])
+    λ, ϕ = eigs(M.M; nev = 1, which = :LM, ritzvec = true,
+                tol = 1e-10, maxiter = 1_000)
+    eq = real(ϕ)
     eq ./= sum(eq)
     PopState(reshape(eq, n...))
 end
@@ -61,47 +65,9 @@ end
     eqdist(M::MovementModel, B0::Real)
 
 Finds the equilibrium spatial population distribution given a movement
-operator `M` and total biomass `B0`. This is **slow**, because it
-finds *all* of the eigenvalues and eigenvectors. I recommend using
-`approx_eqdist` instead.
+operator `M` and total biomass `B0`.
 """
 function eqdist(M::MovementModel, B0::Real)
     eq = eqdist(M)
     PopState(B0 .* eq.P)
-end
-
-## TODO: Should stopping criterion rely on Rayleigh quotient giving an
-## eigenvalue of one, rather than estimated eigenvector convergence?
-## Also consider using ARPACK.jl (new, with FORTRAN deps) or
-## IterativeSolvers.jl
-"""
-    approx_eqdist(M::MovementModel, B0::Real)
-
-Uses power iteration to find the spatial population distribution given
-some movement operator `M` and total biomass `B0`. **Much** faster than
-`eqdist` given reasonably large operators.
-"""
-function approx_eqdist(M::MovementModel{T}) where T<:Real
-    A = M.M
-    n = M.Ωsize
-    ## Tolerance taken from IterativeSolvers.jl, may need to be reduced.
-    tol = eps(real(eltype(A))) * size(A, 2) ^ 3
-    d = size(A, 1)
-    v0 = ones(d) / norm(ones(d))
-    v1 = copy(v0)
-    w = copy(v0)
-    δv = 10 * tol * ones(d)
-    while norm(δv, Inf) > tol
-        w .= A * v0
-        v1 .= w ./ norm(w)
-        δv .= v0 .- v1
-        v0 .= v1
-    end
-    vnorm = v1 ./ norm(v1, 1)
-    # @. v1 = v1 / norm(v1, 1)
-    PopState(reshape(vnorm, n...))
-end
-function approx_eqdist(M::MovementModel{T}, B0::T) where T<:Real
-    eq = approx_eqdist(M)
-    PopState(eq.P .* B0)
 end
