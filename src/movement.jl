@@ -54,9 +54,19 @@ one due to the row-standardization of the movement operator).
 """
 function eqdist(M::MovementModel)
     n = M.Ωsize
-    λ, ϕ = eigs(M.M; nev = 1, which = :LM, ritzvec = true,
-                tol = 1e-10, maxiter = 1_000)
-    eq = real(ϕ)
+    tol = 1e-10
+    eq = zeros((0,))
+    while true
+        λ, ϕ = eigs(M.M; nev = 1, which = :LM, ritzvec = true,
+                    tol = tol, maxiter = 1_000, v0 = eq)
+        eq = vec(real(ϕ))
+        if any(eq .< 0)
+            tol *= 1e-1
+        else
+            break
+        end
+    end
+
     eq ./= sum(eq)
     PopState(reshape(eq, n...))
 end
