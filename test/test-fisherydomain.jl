@@ -6,7 +6,7 @@
     randsamp = sample(Ω, 400)
     randhist = fit(Histogram, randsamp, closed = :right)
     ## FIXME: Need a test for the unweighted sampling case
-    prefsamp = sample(Ω, weights(2first.(Ω.locs)), 400)
+    prefsamp = sample(Ω, weights(2last.(Ω.locs)), 400)
     prefhist = fit(Histogram, prefsamp, closed = :right)
     ## FIXME: Is this the best test to use here?
     @test prefhist.weights[1] < prefhist.weights[end]

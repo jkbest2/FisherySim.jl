@@ -57,14 +57,15 @@ struct Catch{Tf, Ti} <: Any
     time::Ti
     vessel_idx::Ti
     loc_idx::Ti
-    coordinates::Tuple{Tf, Tf}
+    coord1::Tf
+    coord2::Tf
     effort::Tf
     catch_biomass::Tf
 
     function Catch(time::Ti, vessel_idx::Ti,
                    loc_idx::Ti, coordinates::Tuple{Tf, Tf},
                    effort::Tf, catch_biomass::Tf) where {Tf<:Real, Ti<:Integer}
-        new{Tf, Ti}(time, vessel_idx, loc_idx, coordinates, effort, catch_biomass)
+        new{Tf, Ti}(time, vessel_idx, loc_idx, coordinates[1], coordinates[2], effort, catch_biomass)
     end
 end
 
