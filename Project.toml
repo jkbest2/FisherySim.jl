@@ -14,4 +14,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TweedieDistributions = "074c098c-c2ce-40ce-9d8c-a479c1fc98cf"
 
 [compat]
-TweedieDistributions = ">= 0.1.1"
+TweedieDistributions = "0.2"
