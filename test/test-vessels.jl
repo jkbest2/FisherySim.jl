@@ -20,5 +20,9 @@
 
     @test sum(getfield.(c2, :catch_biomass)) > 0
     @test sum(P.P) < 1
+
+    fleet2 = Fleet(fleet.vessels, fleet.total_effort, [1, 2, 3, 4])
+    eff2 = FisherySim.order_effort(fleet2)
+    @test issorted(eff2)
 end
 

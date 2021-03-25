@@ -30,12 +30,21 @@ end
 struct Fleet{Tv, Te<:Integer}
     vessels::Vector{Tv}
     total_effort::Vector{Te}
+    priority::Vector{Te}
 
-    function Fleet(vessels::Vector{Tv}, total_effort::Vector{Te}) where {Tv<:Vessel, Te<:Integer}
-        length(vessels) == length(total_effort) ||
-            throw(DimensionMismatch("Must have an effort for each vessel"))
-        new{Tv, Te}(vessels, total_effort)
+    function Fleet(vessels::Vector{Tv},
+                   total_effort::Vector{Te},
+                   priority::Vector{Te}) where {Tv<:Vessel, Te<:Integer}
+        length(vessels) == length(total_effort) == length(priority) ||
+            throw(DimensionMismatch("Must have an effort and priority for each vessel"))
+        priority = denserank(priority)
+        new{Tv, Te}(vessels, total_effort, priority)
     end
+end
+
+function Fleet(vessels::Vector{Tv},
+               total_effort::Vector{Te}) where {Tv<:Vessel, Te<:Integer}
+    Fleet(vessels, total_effort, ones(eltype(total_effort), length(total_effort)))
 end
 
 getindex(F::Fleet, i) = F.vessels[i]
@@ -110,8 +119,7 @@ function fish!(P::PopState{Tf},
                F::Fleet,
                Ω::AbstractFisheryDomain,
                t::Ti = 1) where {Tf<:Real, Ti<:Integer}
-    effort_vec = reduce(vcat, [repeat([vessel_idx], inner = [tot_eff]) for
-                               (vessel_idx, tot_eff) in enumerate(F.total_effort)])
+    effort_vec = order_effort(F)
     catch_record = Vector{Catch{Tf, Ti}}()
     shuffle!(effort_vec)
     for idx in effort_vec
@@ -124,4 +132,19 @@ function fish!(P::PopState{Tf},
         reset!(vessel.target, P)
     end
     catch_record
+end
+
+"Return a vector with vessel indices ordered for fishing."
+function order_effort(fleet::Fleet{Tv, Te}) where {Tv, Te}
+    tot_eff = fleet.total_effort
+    pri = fleet.priority
+    vessel_idx = 1:length(fleet)
+    eff_vvec = [fill(i, tot_eff[i]) for i in vessel_idx]
+
+    eff = [Te[] for _ in unique(pri)]
+    for (i, p) in enumerate(pri)
+        append!(eff[p], eff_vvec[i])
+    end
+    shuffle!.(eff)
+    reduce(vcat, eff)
 end
