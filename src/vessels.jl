@@ -121,7 +121,6 @@ function fish!(P::PopState{Tf},
                t::Ti = 1) where {Tf<:Real, Ti<:Integer}
     effort_vec = order_effort(F)
     catch_record = Vector{Catch{Tf, Ti}}()
-    shuffle!(effort_vec)
     for idx in effort_vec
         c = fish!(P, F[idx], Ω, t, idx)
         push!(catch_record, c)
