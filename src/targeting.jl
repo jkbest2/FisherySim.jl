@@ -106,7 +106,7 @@ end
 
 function DynamicPreferentialTargeting(preference::AbstractArray,
                                       pref_fn::Function)
-    DynamicPreferentialTargeting(weights(preference), pref_fn)
+    DynamicPreferentialTargeting(weights(pref_fn(preference)), pref_fn)
 end
 
 function reset!(dynpref::DynamicPreferentialTargeting, pop::PopState)
