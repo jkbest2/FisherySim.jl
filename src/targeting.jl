@@ -110,6 +110,6 @@ function DynamicPreferentialTargeting(preference::AbstractArray,
 end
 
 function reset!(dynpref::DynamicPreferentialTargeting, pop::PopState)
-    dynpref.preference = weights(dynpref.pref_fn.(pop.P))
+    dynpref.preference = weights(dynpref.pref_fn(pop.P))
 end
 
