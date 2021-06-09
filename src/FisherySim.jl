@@ -10,7 +10,7 @@ using Arpack
 
 import Base:
     rand,
-    +, -,
+    +, -, *,
     step,
     sum,
     getindex, setindex!,
@@ -87,7 +87,10 @@ export
 
 include("catchability.jl")
 export
-    Catchability
+    AbstractCatchability,
+    Catchability,
+    DensityDependentCatchability,
+    *
 
 include("vessels.jl")
 export

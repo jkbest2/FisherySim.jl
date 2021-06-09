@@ -1,3 +1,5 @@
+abstract type AbstractCatchability{Tq} end
+
 """
 Catchability describes a catchability surface for a vessel. Accepts either an
 Array with the same dimensions as the DiscreteFisheryDomain or a function that
@@ -6,7 +8,7 @@ returns the catchability coefficient for that location. Note that at present
 the function form is only used to form the array version under a particular
 DiscreteFisheryDomain.
 """
-struct Catchability{Tq}
+struct Catchability{Tq} <: AbstractCatchability{Tq}
     catchability::Tq
 
     Catchability(q::Tq) where Tq = new{Tq}(q)
@@ -50,34 +52,46 @@ end
 
 function getindex(Q::Catchability{Tq} where Tq<:Real,
                   loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
-    Q.catchability
+    Catchability(Q.catchability)
 end
 
 function getindex(Q::Catchability{Tq} where Tq<:AbstractMatrix,
                   loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
-    Q.catchability[loc.l]
+    Catchability(Q.catchability[loc.l])
 end
 
 function getindex(Q::Catchability{Tq} where Tq<:AbstractVector{<:AbstractMatrix},
                   loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
-    Q.catchability[loc.t][loc.l]
+    Catchability(Q.catchability[loc.t][loc.l])
 end
 
-# function getindex(Q::Catchability{Tq}, i, j) where Tq<:Real
-#     Q.catchability
-# end
-# function getindex(Q::Catchability{Tq}, i) where Tq<:Real
-#     Q.catchability
-# end
-# function getindex(Q::Catchability{Tq}, i, j) where Tq<:AbstractArray{<:Any,2}
-#     Q.catchability[i, j]
-# end
-# function getindex(Q::Catchability{Tq}, i) where Tq<:AbstractArray{<:Any,2}
-#     Q.catchability[i]
-# end
-# function getindex(Q::Catchability{Tq}, i, j, t) where Tq<:AbstractVector{<:AbstractMatrix}
-#     Q.catchability[t][i, j]
-# end
-# function getindex(Q::Catchability{Tq}, i, t) where Tq<:AbstractVector{<:AbstractMatrix}
-#     Q.catchability[t][i]
-# end
+Base.:*(p, q::Catchability) = p * q.catchability
+Base.:*(q::Catchability, p) = p * q
+
+"""
+    DensityDependentCatchability
+
+Catchability depends on local density.
+"""
+struct DensityDependentCatchability{Tq} <: AbstractCatchability{Tq}
+    base_q::Tq
+    mult::Tq
+
+    function DensityDependentCatchability(base_q::Tq, mult::Tq) where Tq
+        base_q > 0 || DomainError(base_q, "base_q must be positive")
+        mult > 0 || DomainError(mult, "mult must be positive")
+
+        new{Tq}(base_q, mult)
+    end
+end
+
+function getindex(q::DensityDependentCatchability,
+                  loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer)
+    q
+end
+
+Base.:*(p, q::DensityDependentCatchability) = p * p * q.mult * q.base_q
+Base.:*(q::DensityDependentCatchability, p) = p * q
+
+# Treat as a scalar for broadcasting
+Base.Broadcast.broadcastable(q::DensityDependentCatchability) = Ref(q)
