@@ -90,7 +90,9 @@ function getindex(q::DensityDependentCatchability,
     q
 end
 
-Base.:*(p, q::DensityDependentCatchability) = p * p * q.mult * q.base_q
+# Multiplication applies the catchability so I don't have change the fish!
+# function.
+Base.:*(p, q::DensityDependentCatchability) = p * q.base_q + p ^ 2 * q.mult * q.base_q
 Base.:*(q::DensityDependentCatchability, p) = p * q
 
 # Treat as a scalar for broadcasting
