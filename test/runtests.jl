@@ -6,6 +6,7 @@ using Test
 using Random
 using PDMats
 using LinearAlgebra
+using NeutralLandscapes
 
 ## Make reproducible
 Random.seed!(1234)
@@ -44,6 +45,13 @@ mvlognorm = DomainDistribution(MvLogNormal, ones(length(Ω)), matΣ, Ω)
 ln_real = rand(lognorm)
 mvln_real = rand(mvlognorm)
 # matlognorm_real = rand(matlognorm)
+
+dd1 = DomainDistribution(MidpointDisplacement(), Ω)
+cdd1 = ClassifiedDomainDistribution(MidpointDisplacement(), Ω, 3)
+cdd2 = ClassifiedDomainDistribution(MidpointDisplacement(), Ω, [0.1, 0.4])
+ddist_vec = [mvlognorm, dd1]
+bdd1 = BlendedDomainDistribution(ddist_vec, Ω, [0.5, 0.9])
+bdd2 = BlendedDomainDistribution([mvlognorm, cdd1], Ω, [0.3, 2.0])
 
 include("test-domaindistribution.jl")
 

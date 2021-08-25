@@ -7,6 +7,7 @@ using LinearAlgebra
 using Random
 using PDMats
 using Arpack
+using NeutralLandscapes
 
 import Base:
     rand,
@@ -48,7 +49,11 @@ export
 
 include("domaindistributions.jl")
 export
-    DomainDistribution
+    AbstractDomainDistribution,
+    DomainDistribution,
+    BlendedDomainDistribution,
+    ClassifiedDomainDistribution,
+    domain
 
 include("bathymetry.jl")
 export
