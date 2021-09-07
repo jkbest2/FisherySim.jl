@@ -51,9 +51,19 @@ include("domaindistributions.jl")
 export
     AbstractDomainDistribution,
     DomainDistribution,
+    MultiDomainDistribution,
     BlendedDomainDistribution,
     ClassifiedDomainDistribution,
-    domain
+    domain,
+    getindex,
+    length
+
+include("habitat.jl")
+export
+    Habitat,
+    getindex,
+    length,
+    HabitatPreference
 
 include("bathymetry.jl")
 export
@@ -77,7 +87,8 @@ export
 include("movement.jl")
 export
     MovementModel,
-    eqdist
+    eqdist,
+    MovementRate
 
 include("targeting.jl")
 export

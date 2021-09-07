@@ -8,6 +8,7 @@
     @test size(rand(dd1)) == size(Ω)
     @test size(rand(cdd1)) == size(Ω)
     @test size(rand(cdd2)) == size(Ω)
-    @test size(rand(bdd1)) == size(Ω)
+    @test length(rand(mdd1)) == 2
     @test size(rand(bdd2)) == size(Ω)
+    @test size(rand(bdd3)) == size(Ω)
 end

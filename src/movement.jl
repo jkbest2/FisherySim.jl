@@ -81,3 +81,23 @@ function eqdist(M::MovementModel, B0::Real)
     eq = eqdist(M)
     PopState(B0 .* eq.P)
 end
+
+struct MovementRate{F}
+    dist::F
+
+    function MovementRate(dist::F) where F<:Function
+        new{F}(dist)
+    end
+end
+
+(mr::MovementRate)(domain::AbstractFisheryDomain) = mr.dist.(domain.distances)
+
+function MovementModel(habitat::Habitat{N}, habpref::HabitatPreference{N, F}, rate::MovementRate, domain::AbstractFisheryDomain) where {N, F}
+    hpref = habpref(habitat; normalize = true)
+    dist = rate(domain)
+
+    movop = vec(hpref) .* dist
+    movop ./= sum(movop; dims = 1)
+
+    MovementModel(movop, size(domain))
+end

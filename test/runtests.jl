@@ -40,20 +40,30 @@ include("test-covkernels.jl")
 ## Define distributions over the domain
 lognorm = DomainDistribution(LogNormal(-0.2^2 / 2, 0.2), Ω)
 mvlognorm = DomainDistribution(MvLogNormal, ones(length(Ω)), matΣ, Ω)
+mvnorm = DomainDistribution(MvNormal(zeros(length(Ω)), matΣ), Ω)
 # matlognorm = DomainDistribution(MatrixLogNormal, 0.2ones(length(Ω), T), matΣ, ar1Σ, Ω)
 
 ln_real = rand(lognorm)
 mvln_real = rand(mvlognorm)
+mvn_real = rand(mvnorm)
 # matlognorm_real = rand(matlognorm)
 
 dd1 = DomainDistribution(MidpointDisplacement(), Ω)
 cdd1 = ClassifiedDomainDistribution(MidpointDisplacement(), Ω, 3)
 cdd2 = ClassifiedDomainDistribution(MidpointDisplacement(), Ω, [0.1, 0.4])
-ddist_vec = [mvlognorm, dd1]
-bdd1 = BlendedDomainDistribution(ddist_vec, Ω, [0.5, 0.9])
-bdd2 = BlendedDomainDistribution([mvlognorm, cdd1], Ω, [0.3, 2.0])
+ddist_vec = [mvnorm, dd1]
+mdd1 = MultiDomainDistribution(ddist_vec)
+bdd1 = BlendedDomainDistribution(mdd1, [0.3, 0.5])
+bdd2 = BlendedDomainDistribution(ddist_vec, Ω, [0.5, 0.9])
+bdd3 = BlendedDomainDistribution([mvlognorm, cdd1], Ω, [0.3, 2.0])
 
 include("test-domaindistribution.jl")
+
+## -----------------------------------------------------------------------------
+## Habitats
+hab1 = Habitat(rand(dd1))
+hab2 = Habitat(rand.(ddist_vec))
+include("test-habitat.jl")
 
 ## -----------------------------------------------------------------------------
 ## Generate bathymetry
@@ -67,22 +77,20 @@ end
 hab_model = DomainDistribution(MvNormal(μv, matΣ), Ω)
 hab = rand(hab_model)
 
-# bmod_mat = BathymetryModel(Ω, μv, matkern)
-# bathy_mat = rand(bmod_mat)
-
-# include("test-bathymetry.jl")
+hab2 = Habitat(rand(mdd1))
 
 ## -----------------------------------------------------------------------------
 ## Construct a movement model
-# move = MovementModel(bathy_mat, Exponential(10.0), Normal(10.0, 2.0))
-hab_pref(h) = exp(-h^2 / 2)
-dist_kern(d) = exp(-d / 2)
-move = MovementModel(Ω, hab, hab_pref, dist_kern)
+h1pref(h) = exp(-h ^ 2 / 10)
+h2pref(h) = 1
+hab2pref = HabitatPreference(h1pref, h2pref)
+dist = MovementRate(d -> exp(-d ^ 2 / 100))
+move = MovementModel(hab2, hab2pref, dist, Ω)
 
 # Find the equilibrium distribution using `eigvecs` to compare to to approximate
 # method.
 ews = eigvecs(move.M)
-eqdist_eigvecs = reshape(ews[:, end], size(Ω)...)
+eqdist_eigvecs = real.(reshape(ews[:, end], size(Ω)...))
 eqdist_eigvecs ./= sum(eqdist_eigvecs)
 
 eqdist_ap0 = eqdist(move)

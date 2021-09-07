@@ -57,20 +57,17 @@ function rand(dd::DomainDistribution{D, O}) where {D<:NeutralLandscapeMaker, O}
     rand(dd.dist, size(dd.domain))
 end
 
-# Blended distributions - combine multiple, weighted distributions over the domain
-struct BlendedDomainDistribution{T} <: AbstractDomainDistribution
+# Multiple domain distribution
+struct MultiDomainDistribution <: AbstractDomainDistribution
     ddists::Vector{AbstractDomainDistribution}
-    wts::Vector{T}
 
-    function BlendedDomainDistribution(ddists::Vector{AbstractDomainDistribution}, wts::Vector{T} = ones(length(ddists))) where {D<:AbstractDomainDistribution, T<:Real}
-        length(ddists) == length(wts) || error("Must have weights for each distribution")
+    function MultiDomainDistribution(ddists::Vector{AbstractDomainDistribution})
         all(==(domain(ddists[1])), domain.(ddists)) || error("All components must have the same domain")
-
-        new{T}(ddists, wts)
+        new(ddists)
     end
 end
 
-function BlendedDomainDistribution(dists::Vector, domain::AbstractFisheryDomain, wts::Vector{<:Real} = ones(length(dists)))
+function MultiDomainDistribution(dists::Vector, domain::AbstractFisheryDomain)
     ddist_vec = AbstractDomainDistribution[]
     for d in dists
         if d isa AbstractDomainDistribution
@@ -80,13 +77,48 @@ function BlendedDomainDistribution(dists::Vector, domain::AbstractFisheryDomain,
         end
     end
 
-    BlendedDomainDistribution(ddist_vec, wts)
+    MultiDomainDistribution(ddist_vec)
 end
 
-domain(bdd::BlendedDomainDistribution) = domain(bdd.ddists[1])
+# If vector of domain distributions is provided without a domain, extract the
+# domain from distributions that have it, check for equality, then use above
+# constructor.
+function MultiDomainDistribution(ddists::Vector)
+    dom_vec = AbstractFisheryDomain[]
+    for dist in ddists
+        if dist isa AbstractDomainDistribution
+            push!(dom_vec, domain(dist))
+        end
+    end
+    length(dom_vec) > 0 || error("Must provide a domain")
+    all(==(dom_vec[1]), dom_vec) || error("Each distribution must use the same domain")
+    MultiDomainDistribution(ddists, dom_vec[1])
+end
+
+length(mdd::MultiDomainDistribution) = length(mdd.ddists)
+domain(mdd::MultiDomainDistribution) = domain(mdd.ddists[1])
+rand(mdd::MultiDomainDistribution) = rand.(mdd.ddists)
+getindex(mdd::MultiDomainDistribution, i) = getindex(mdd.ddists, i)
+
+# Blended distributions - combine multiple, weighted distributions over the domain
+struct BlendedDomainDistribution{T} <: AbstractDomainDistribution
+    ddists::MultiDomainDistribution
+    wts::Vector{T}
+
+    function BlendedDomainDistribution(ddists::MultiDomainDistribution, wts::Vector{T} = ones(length(ddists))) where {D<:AbstractDomainDistribution, T<:Real}
+        new{T}(ddists, wts)
+    end
+end
+
+function BlendedDomainDistribution(dists::Vector, domain::AbstractFisheryDomain, wts::Vector{<:Real} = ones(length(dists)))
+    mdd = MultiDomainDistribution(dists, domain)
+    BlendedDomainDistribution(mdd, wts)
+end
+
+domain(bdd::BlendedDomainDistribution) = domain(bdd.ddists)
 
 function rand(bddist::BlendedDomainDistribution)
-    rvec = rand.(bddist.ddists)
+    rvec = rand(bddist.ddists)
     blend(rvec, bddist.wts)
 end
 

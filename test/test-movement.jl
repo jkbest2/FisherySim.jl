@@ -7,4 +7,3 @@
     @test sum(eqdist_ap0) ≈ 1.0
     @test sum(eqdist_ap) ≈ 100.0
 end
-
