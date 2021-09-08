@@ -106,6 +106,7 @@ export
     AbstractCatchability,
     Catchability,
     DensityDependentCatchability,
+    HabitatCatchability,
     *
 
 include("vessels.jl")

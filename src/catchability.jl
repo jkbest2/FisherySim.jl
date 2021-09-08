@@ -90,10 +90,38 @@ function getindex(q::DensityDependentCatchability,
     q
 end
 
-# Multiplication applies the catchability so I don't have change the fish!
+# Multiplication applies the catchability so I don't have to change the fish!
 # function.
 Base.:*(p, q::DensityDependentCatchability) = p * q.base_q + p ^ 2 * q.mult * q.base_q
 Base.:*(q::DensityDependentCatchability, p) = p * q
 
 # Treat as a scalar for broadcasting
 Base.Broadcast.broadcastable(q::DensityDependentCatchability) = Ref(q)
+
+struct HabitatCatchability{H, F, T, N} <: AbstractCatchability{T}
+    habitat::H
+    qfuns::F
+    base_catchability::T
+
+    function HabitatCatchability(habitat::H, base_catchability::T, qfuns::F) where {H<:Habitat, T<:Real, F<:Tuple}
+        N = length(qfuns)
+        length(habitat) == N || error("Need same number of habitats and qfuns")
+        new{H, F, T, N}(habitat, qfuns, base_catchability)
+    end
+end
+function HabitatCatchability(habitat::Habitat, base_catchability::Real, qfuns...)
+    qfuns = tuple(qfuns...)
+    HabitatCatchability(habitat, base_catchability, qfuns)
+end
+
+function getindex(q::HabitatCatchability{H, F, T, N},
+                  loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer) where {H, F, T, N}
+    q = mapreduce(+, 1:N; init = q.base_catchability) do n
+        q.qfuns[n](q.habitat[n][loc.l])
+    end
+    ## Make sure that catchability is always non-negative
+    q = clamp(q, 0, Inf)
+    Catchability(q)
+end
+
+getindex(q::HabitatCatchability, loc::I) where I<:Integer = q[(l = loc, t = zero(I))]

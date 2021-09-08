@@ -11,6 +11,7 @@
     @test q_spat[(l = 500, t = 100)].catchability > 0
     # @test q_sptemp[(l = 400, t = 1)].catchability > 0
     # @test q_vary[35].catchability == 1.0
+    @test q_hab[10].catchability == q_hab.base_catchability + hab2[2][10] * 0.2
 
     @test c1 isa Catch
     @test any(P.P .!= 0.005)

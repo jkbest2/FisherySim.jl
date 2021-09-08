@@ -19,7 +19,7 @@ struct Vessel{Tt, Tq, Tf}
                     catchability::Tq,
                     ξ::Tf,
                     ϕ::Tf) where {Tt<:AbstractTargetingBehavior,
-                                  Tq<:Catchability,
+                                  Tq<:AbstractCatchability,
                                   Tf<:Real}
         new{Tt, Tq, Tf}(target, catchability, ξ, ϕ)
     end

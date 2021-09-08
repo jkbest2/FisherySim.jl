@@ -140,6 +140,7 @@ q_const = Catchability(0.2)
 q_diff = Catchability(lognorm, q_const)
 q_spat = Catchability(mvlognorm, q_const)
 # q_sptemp = Catchability(matlognorm, q_const)
+q_hab = HabitatCatchability(hab2, 0.1, h1 -> 0.0, h2 -> 0.2 * h2)
 
 ## These have to be fairly high to get many non-zero catches.
 ## These give ~10% zeros. These (especially ϕ?) may be good for testing,
@@ -150,7 +151,7 @@ q_spat = Catchability(mvlognorm, q_const)
 v1 = Vessel(target_fixed, q_const, ξ, ϕ)
 v2 = Vessel(target_rand, q_diff, ξ, ϕ)
 v3 = Vessel(target_pref, q_spat, ξ, ϕ)
-v4 = Vessel(target_pref, q_spat, ξ, ϕ)
+v4 = Vessel(target_pref, q_hab, ξ, ϕ)
 
 P = PopState(ones(size(Ω)...) / length(Ω))
 c1 = fish!(P, v1, Ω)
