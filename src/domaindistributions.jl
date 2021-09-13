@@ -123,13 +123,14 @@ function rand(bddist::BlendedDomainDistribution)
 end
 
 # Classified domain distributions - classify
-struct ClassifiedDomainDistribution{D, T, M} <: AbstractDomainDistribution
+struct ClassifiedDomainDistribution{D, T, M, N} <: AbstractDomainDistribution
     ddist::D
     wts::Vector{T}
     mask::M
 
     function ClassifiedDomainDistribution(ddist::D, wts::Vector{T}, mask::M = nothing) where {D<:AbstractDomainDistribution, T<:Real, M}
-        new{D, T, M}(ddist, wts, mask)
+        N = length(wts)
+        new{D, T, M, N}(ddist, wts, mask)
     end
 end
 
@@ -144,7 +145,14 @@ end
 
 domain(cdd::ClassifiedDomainDistribution) = cdd.ddist.domain
 
+function rand(cddist::ClassifiedDomainDistribution{D, T, M, 2}) where {D, T, M}
+    res = rand(cddist.ddist)
+    classify!(res, cddist.wts, cddist.mask)
+    res .== 2
+end
+
 function rand(cddist::ClassifiedDomainDistribution)
     res = rand(cddist.ddist)
     classify!(res, cddist.wts, cddist.mask)
+    trunc.(Int, res)
 end
