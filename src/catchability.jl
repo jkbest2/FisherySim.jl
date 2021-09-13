@@ -116,7 +116,7 @@ end
 
 function getindex(q::HabitatCatchability{H, F, T, N},
                   loc::NamedTuple{(:l, :t), Tuple{Ti, Ti}} where Ti<:Integer) where {H, F, T, N}
-    q = mapreduce(+, 1:N; init = q.base_catchability) do n
+    q = mapreduce(*, 1:N; init = q.base_catchability) do n
         q.qfuns[n](q.habitat[n][loc.l])
     end
     ## Make sure that catchability is always non-negative

@@ -140,7 +140,7 @@ q_const = Catchability(0.2)
 q_diff = Catchability(lognorm, q_const)
 q_spat = Catchability(mvlognorm, q_const)
 # q_sptemp = Catchability(matlognorm, q_const)
-q_hab = HabitatCatchability(hab2, 0.1, h1 -> 0.0, h2 -> 0.2 * h2)
+q_hab = HabitatCatchability(hab2, 0.1, h1 -> 1.0, h2 -> 1.2 * h2)
 
 ## These have to be fairly high to get many non-zero catches.
 ## These give ~10% zeros. These (especially ϕ?) may be good for testing,
