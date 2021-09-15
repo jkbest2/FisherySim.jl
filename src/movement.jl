@@ -92,7 +92,7 @@ end
 
 (mr::MovementRate)(domain::AbstractFisheryDomain) = mr.dist.(domain.distances)
 
-function MovementModel(habitat::Habitat{N}, habpref::HabitatPreference{N, F}, rate::MovementRate, domain::AbstractFisheryDomain) where {N, F}
+function MovementModel(habitat::Habitat{T, N} where T, habpref::HabitatPreference{F, N}, rate::MovementRate, domain::AbstractFisheryDomain) where {N, F}
     hpref = habpref(habitat; normalize = true)
     dist = rate(domain)
 
