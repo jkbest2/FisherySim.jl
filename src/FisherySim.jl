@@ -98,6 +98,7 @@ export
     AbstractPreferentialTargeting,
     PreferentialTargeting,
     DynamicPreferentialTargeting,
+    StratifiedRandomTargeting,
     target,
     reset!
 

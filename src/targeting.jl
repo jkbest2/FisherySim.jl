@@ -113,3 +113,56 @@ function reset!(dynpref::DynamicPreferentialTargeting, pop::PopState)
     dynpref.preference = weights(dynpref.pref_fn(pop.P))
 end
 
+
+# Stratified random targeting; choose random sites within defined blocks
+mutable struct StratifiedRandomTargeting{T} <: AbstractTargetingBehavior
+    strata::Vector{Vector{T}}
+    nsamples::Vector{T}
+    state::T
+
+    function StratifiedRandomTargeting(strata::Vector{Vector{T}}, nsamples::Vector{T}, state::T = one(T)) where T<:Integer
+        any(nsamples .> 1) && error("Targeting doesn't work with >1 sample per strate yet.")
+        new{T}(strata, nsamples, state)
+    end
+end
+
+function StratifiedRandomTargeting(strata::Vector{Vector{T}}, n::T = 1) where T
+    StratifiedRandomTargeting(strata, n * ones(T, length(strata)), one(T))
+end
+
+function StratifiedRandomTargeting(nblocks::Tuple, dom::GriddedFisheryDomain, n = 1)
+    domsize = size(dom)
+    dominds = LinearIndices(size(dom))
+    blksize = domsize .÷ nblocks
+    xinds, yinds = [1:b for b in blksize]
+
+    strata = Vector{Vector{Int}}()
+    for blk2 in 1:nblocks[2]
+        colinds = xinds .+ blksize[2] * (blk2 - 1)
+        for blk1 in 1:nblocks[1]
+            rowinds = yinds .+ blksize[1] * (blk1 - 1)
+            stratinds = vec(dominds[rowinds, colinds])
+            push!(strata, stratinds)
+        end
+    end
+
+    StratifiedRandomTargeting(strata, n)
+end
+
+reset!(stratrand::StratifiedRandomTargeting{T}) where T = stratrand.state = one(T)
+
+function target(rng::Random.AbstractRNG,
+                stratrand::StratifiedRandomTargeting,
+                domain::AbstractFisheryDomain)
+    loc = sample(rng, stratrand.strata[stratrand.state])
+    stratrand.state += 1
+
+    loc
+end
+
+function target(stratrand::StratifiedRandomTargeting,
+                domain::AbstractFisheryDomain)
+    target(Random.GLOBAL_RNG, stratrand, domain)
+end
+
+length(stratrand::StratifiedRandomTargeting) = sum(stratrand.nsamples)
